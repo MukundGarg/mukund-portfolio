@@ -145,9 +145,9 @@ function Hero() {
             transition={{ delay: 0.08, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
             className="max-w-5xl text-[clamp(3.6rem,10vw,7.9rem)] font-black leading-[0.9] tracking-[-0.065em]"
           >
-            <span className="block text-white/30">I build</span>
-            <span className="block text-white">AI systems</span>
-            <span className="block bg-gradient-to-r from-[var(--accent)] to-[var(--accent-2)] bg-clip-text text-transparent">that ship.</span>
+            <span className="block font-mono text-[0.34em] font-medium uppercase tracking-[0.18em] text-[var(--accent)]">Signal / intelligence</span>
+            <span className="mt-3 block text-white">I build AI</span>
+            <span className="block bg-gradient-to-r from-[var(--accent)] to-[var(--accent-2)] bg-clip-text text-transparent">systems that ship.</span>
           </motion.h1>
 
           <motion.p
