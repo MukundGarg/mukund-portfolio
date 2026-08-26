@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-:root { --bg:#070a0c; --panel:#0c1214; --text:#e9f4f0; --muted:#84928d; --line:rgba(171,224,207,.13); --accent:#86f7ca; --accent-dim:#397e69; }
+:root { --bg:#05040A; --panel:#0D0A14; --elevated:#151020; --text:#F4F3FF; --muted:#AAA5C0; --muted-dim:#666078; --muted:#AAA5C0; --line:rgba(139,92,246,.25); --accent:#00E5FF; --accent-dim:#087f91; --purple:#8B5CF6; --magenta:#FF3CAC; --coral:#FF5E7D; }
 * { box-sizing:border-box; }
 html { scroll-behavior:smooth; background:var(--bg); }
 body { margin:0; color:var(--text); background:var(--bg); font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; text-rendering:optimizeLegibility; }
@@ -28,3 +28,15 @@ main { max-width:1180px; margin:auto; padding:0 30px; } .hero { min-height:100vh
 .trace { position:fixed; z-index:45; left:11px; top:110px; bottom:38px; width:1px; background:var(--line); pointer-events:none; } .trace-pulse { position:absolute; inset:0; transform-origin:top; background:var(--accent); box-shadow:0 0 12px var(--accent); } .trace-node { position:absolute; left:-3px; width:7px; height:7px; border:1px solid var(--accent); background:var(--bg); } .node-a { top:15%; } .node-b { top:49%; } .node-c { top:83%; }
 @media (max-width:800px) { .nav { padding-left:10px; } nav,.resume { display:none; } .nav-actions button { display:grid; place-items:center; } main { padding:0 18px; } .hero { padding-top:145px; grid-template-columns:1fr; gap:45px; } .readout { max-width:520px; } .profile-grid,.projects,.experience-grid,.capability-grid { grid-template-columns:1fr; } .system-record.large,.system-record.wide { grid-column:auto; grid-row:auto; } .leadership-row { grid-template-columns:1fr; gap:5px; } footer { padding-left:18px; padding-right:18px; flex-direction:column; gap:10px; } .trace { left:6px; } }
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important; animation-duration:.001ms!important; animation-iteration-count:1!important; transition-duration:.001ms!important; } }
+
+/* Signal → intelligence visual layer */
+body { background:var(--bg); background-image:linear-gradient(rgba(0,229,255,.018) 1px, transparent 1px),linear-gradient(90deg,rgba(139,92,246,.018) 1px, transparent 1px); background-size:48px 48px; }
+body::before { content:""; position:fixed; inset:0; pointer-events:none; z-index:2; opacity:.16; background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(0,229,255,.035) 4px); mix-blend-mode:screen; }
+.nav { box-shadow:0 0 24px rgba(0,229,255,.04); }
+.project:hover { border-color:var(--accent); box-shadow:0 0 28px rgba(0,229,255,.08); }
+.project:nth-child(2) .project-top,.project:nth-child(2) .metrics span { color:var(--magenta); }
+.project:nth-child(2) .diagram { color:var(--magenta); border-color:rgba(255,60,172,.3); }
+.project:nth-child(3) .project-top { color:var(--purple); }
+.button-primary { box-shadow:0 0 18px rgba(0,229,255,.15); }
+.cursor-crosshair { position:fixed; width:18px; height:18px; border:1px solid var(--accent); border-radius:50%; pointer-events:none; z-index:80; transform:translate(-50%,-50%); }
+@media (max-width:800px) { body::before { opacity:.08; } .cursor-crosshair { display:none; } }
