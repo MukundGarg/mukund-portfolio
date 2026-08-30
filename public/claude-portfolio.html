@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mukund Garg — AI/ML · Backend · Computer Vision</title>
+<style>
+  :root{
+    --bg:#070912;
+    --bg2:#0B0E17;
+    --surface:#10141F;
+    --text:#F4F1EA;
+    --text2:#B0B3BE;
+    --muted:#747A89;
+    --accent:#7D89FF;
+    --accent2:#A99BFF;
+    --output:#FF7966;
+    --border:#202532;
+    --inactive: rgba(170,175,195,0.14);
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --maxw: 1180px;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth; background:var(--bg);}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    line-height:1.5;
+  }
+  ::selection{ background:var(--accent); color:var(--bg); }
+  a{ color:inherit; text-decoration:none; }
+  svg{ display:block; overflow:visible; }
+  .mono{ font-family:var(--mono); letter-spacing:0.02em; }
+
+  a:focus-visible, button:focus-visible{
+    outline:2px solid var(--accent2);
+    outline-offset:3px;
+    border-radius:2px;
+  }
+
+  .wrap{ max-width:var(--maxw); margin:0 auto; padding:0 32px; }
+  @media (max-width:640px){ .wrap{ padding:0 20px; } }
+
+  section{ position:relative; padding:140px 0; }
+  @media (max-width:900px){ section{ padding:96px 0; } }
+
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:0.14em;
+    color:var(--accent2);
+    text-transform:uppercase;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:22px;
+  }
+  .eyebrow .num{ color:var(--muted); }
+  .eyebrow::after{
+    content:"";
+    height:1px;
+    flex:1;
+    background:var(--border);
+  }
+
+  h1,h2,h3{ font-weight:600; letter-spacing:-0.02em; }
+
+  /* ---------- NAV ---------- */
+  header.nav{
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    background:rgba(7,9,18,0.72);
+    backdrop-filter: blur(14px);
+    border-bottom:1px solid var(--border);
+  }
+  .nav-inner{
+    max-width:var(--maxw); margin:0 auto; padding:0 32px;
+    height:64px; display:flex; align-items:center; justify-content:space-between;
+  }
+  .nav-mark{ font-family:var(--mono); font-size:14px; letter-spacing:0.04em; color:var(--text); }
+  .nav-mark span{ color:var(--accent2); }
+  .nav-links{ display:flex; align-items:center; gap:2px; list-style:none; }
+  .nav-links a{
+    position:relative;
+    display:flex; align-items:center; gap:6px;
+    padding:10px 14px;
+    font-size:13px;
+    color:var(--text2);
+    transition:color .2s ease;
+  }
+  .nav-links a .n{ font-family:var(--mono); font-size:10px; color:var(--muted); }
+  .nav-links a:hover{ color:var(--text); }
+  .nav-links a.active{ color:var(--text); }
+  .nav-links a.active .n{ color:var(--output); }
+  .nav-node{
+    position:absolute; left:50%; bottom:6px; transform:translateX(-50%);
+    width:4px; height:4px; border-radius:50%;
+    background:var(--accent2); opacity:0;
+    transition:opacity .2s ease;
+  }
+  .nav-links a.active .nav-node{ opacity:1; box-shadow:0 0 8px var(--accent2); }
+  @media (max-width:900px){ .nav-links{ display:none; } }
+
+  /* scroll progress rail */
+  .rail{
+    position:fixed; right:22px; top:50%; transform:translateY(-50%);
+    z-index:90; display:flex; flex-direction:column; gap:22px;
+  }
+  .rail button{
+    background:none; border:none; cursor:pointer; padding:6px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .rail-dot{
+    width:6px; height:6px; border-radius:50%;
+    background:var(--inactive);
+    transition: all .25s ease;
+  }
+  .rail button.active .rail-dot{
+    background:var(--accent2);
+    box-shadow:0 0 0 3px rgba(125,137,255,0.15);
+    transform:scale(1.3);
+  }
+  @media (max-width:900px){ .rail{ display:none; } }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    min-height:100svh;
+    display:flex; align-items:center;
+    padding-top:64px;
+    position:relative;
+  }
+  .hero-inner{ width:100%; max-width:var(--maxw); margin:0 auto; padding:0 32px; position:relative; }
+  .hero-stage{
+    position:relative;
+    width:100%;
+    height:640px;
+  }
+  @media (max-width:900px){ .hero-stage{ height:520px; } }
+  @media (max-width:560px){ .hero-stage{ height:460px; } }
+
+  .hero-net{ position:absolute; inset:0; width:100%; height:100%; }
+  .node circle{ fill:var(--surface); stroke:var(--border); stroke-width:1.4; transition: stroke .3s ease, fill .3s ease, r .25s ease; }
+  .node.active circle{ stroke:var(--accent); fill:#151a2c; }
+  .node.output.active circle{ stroke:var(--output); }
+  .node.hovered circle{ r:7; stroke:var(--accent2); }
+  .edge{ stroke:var(--inactive); stroke-width:1; fill:none; transition:stroke .35s ease, stroke-width .35s ease; }
+  .edge.lit{ stroke:var(--accent); stroke-width:1.4; }
+  .edge.lit.output-edge{ stroke:var(--output); }
+  .pulse{ fill:var(--accent2); filter:drop-shadow(0 0 4px var(--accent2)); }
+
+  .hero-name{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    text-align:center; pointer-events:none; z-index:5;
+    mix-blend-mode:normal;
+  }
+  .hero-name h1{
+    font-size:clamp(40px, 7vw, 84px);
+    line-height:0.96;
+    letter-spacing:-0.03em;
+    color:var(--text);
+    text-shadow: 0 0 40px rgba(7,9,18,0.9), 0 0 80px rgba(7,9,18,0.9);
+  }
+  .hero-name .role{
+    margin-top:16px;
+    font-family:var(--mono);
+    font-size:12.5px;
+    letter-spacing:0.12em;
+    color:var(--accent2);
+    text-shadow: 0 0 30px rgba(7,9,18,0.95);
+  }
+
+  .hero-foot{
+    position:relative; z-index:5;
+    display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between;
+    gap:24px; margin-top:8px;
+  }
+  .hero-tagline{ max-width:420px; color:var(--text2); font-size:15.5px; }
+  .hero-sub{ margin-top:8px; color:var(--muted); font-size:13px; font-family:var(--mono); }
+  .cta-row{ display:flex; gap:12px; flex-wrap:wrap; }
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:12px 18px; font-size:13.5px; border-radius:3px;
+    border:1px solid var(--border); transition: all .2s ease;
+  }
+  .btn .arrow{ transition:transform .2s ease; }
+  .btn:hover .arrow{ transform:translateX(4px); }
+  .btn.primary{ background:var(--accent); border-color:var(--accent); color:#070912; font-weight:600; }
+  .btn.primary:hover{ background:var(--accent2); border-color:var(--accent2); }
+  .btn.ghost{ color:var(--text2); }
+  .btn.ghost:hover{ border-color:var(--accent2); color:var(--text); }
+
+  .packet-label{
+    position:absolute; font-family:var(--mono); font-size:11px; color:var(--accent2);
+    padding:3px 7px; border:1px solid var(--border); border-radius:2px;
+    background:rgba(11,14,23,0.9); white-space:nowrap; pointer-events:none;
+    opacity:0; transition:opacity .2s ease;
+  }
+  .output-label{
+    position:absolute; font-family:var(--mono); font-size:11px; color:var(--output);
+    padding:3px 7px; border:1px solid rgba(255,121,102,0.4); border-radius:2px;
+    background:rgba(11,14,23,0.9); white-space:nowrap; pointer-events:none;
+    opacity:0; transition:opacity .3s ease;
+  }
+
+  /* ---------- fade-in on scroll ---------- */
+  .reveal{ opacity:0; transform:translateY(18px); transition:opacity .7s ease, transform .7s ease; }
+  .reveal.in{ opacity:1; transform:none; }
+
+  /* ---------- ABOUT / KNOWLEDGE GRAPH ---------- */
+  .about-grid{ display:grid; grid-template-columns: 0.9fr 1.1fr; gap:64px; align-items:center; }
+  @media (max-width:900px){ .about-grid{ grid-template-columns:1fr; gap:48px; } }
+  .about-copy h2{ font-size:clamp(26px,3.4vw,36px); margin-bottom:20px; }
+  .about-copy p{ color:var(--text2); font-size:15.5px; margin-bottom:14px; max-width:46ch; }
+  .focus-tags{ display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; }
+  .focus-tags span{
+    font-family:var(--mono); font-size:11.5px; color:var(--accent2);
+    border:1px solid var(--border); padding:6px 10px; border-radius:2px;
+  }
+  .code-frag{
+    margin-top:26px; font-family:var(--mono); font-size:12.5px; color:var(--text2);
+    background:var(--surface); border:1px solid var(--border); border-radius:4px;
+    padding:14px 16px; overflow-x:auto;
+  }
+  .code-frag .kw{ color:var(--accent2); }
+  .code-frag .fn{ color:var(--accent); }
+  .code-frag .str{ color:var(--output); }
+
+  .kg-stage{ position:relative; width:100%; height:460px; }
+  @media (max-width:640px){ .kg-stage{ height:380px; } }
+  .kg-node text{ font-family:var(--mono); fill:var(--text2); font-size:11px; }
+  .kg-node.root text{ fill:var(--text); font-size:13px; }
+  .kg-node circle{ fill:var(--surface); stroke:var(--border); }
+  .kg-node.root circle{ stroke:var(--accent2); }
+  .kg-branch{ cursor:pointer; }
+  .kg-branch:hover circle{ stroke:var(--accent2); }
+  .kg-branch:hover text{ fill:var(--text); }
+  .kg-children{ opacity:0; transform:translateY(4px); transition:opacity .35s ease, transform .35s ease; pointer-events:none; }
+  .kg-children.open{ opacity:1; transform:none; pointer-events:auto; }
+  .kg-edge{ stroke:var(--inactive); stroke-width:1; fill:none; }
+  .kg-edge.lit{ stroke:var(--accent2); }
+  .kg-hint{ position:absolute; bottom:0; right:0; font-family:var(--mono); font-size:10.5px; color:var(--muted); }
+
+  /* ---------- PROJECTS ---------- */
+  .proj-head{ display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:10px; }
+  .proj-head h3{ font-size:clamp(24px,3vw,32px); }
+  .proj-tag{ font-family:var(--mono); font-size:11px; color:var(--muted); }
+  .proj-desc{ color:var(--text2); font-size:15px; max-width:60ch; margin-bottom:36px; }
+
+  .metrics{ display:flex; gap:36px; margin:34px 0; flex-wrap:wrap; }
+  .metric .num{ font-family:var(--sans); font-size:34px; font-weight:600; color:var(--text); }
+  .metric .lbl{ font-family:var(--mono); font-size:10.5px; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; margin-top:4px; }
+
+  .diagram-box{
+    position:relative; border:1px solid var(--border); border-radius:6px;
+    background:linear-gradient(180deg, rgba(16,20,31,0.6), rgba(11,14,23,0.3));
+    padding:28px; overflow:hidden;
+  }
+  .diagram-box svg text{ font-family:var(--mono); font-size:11px; fill:var(--text2); }
+  .diagram-box .node-box{ fill:var(--surface); stroke:var(--border); }
+  .diagram-box .node-box.active{ stroke:var(--accent); }
+  .diagram-box .flow-edge{ stroke:var(--inactive); stroke-width:1.2; fill:none; }
+  .diagram-box .flow-edge.lit{ stroke:var(--accent2); stroke-width:1.6; }
+  .diagram-box .flow-edge.out.lit{ stroke:var(--output); }
+  .diagram-box .pulse-dot{ fill:var(--accent2); filter:drop-shadow(0 0 5px var(--accent2)); }
+
+  .proj-links{ display:flex; gap:14px; margin-top:24px; }
+  .proj-links a{ font-family:var(--mono); font-size:12.5px; color:var(--text2); display:inline-flex; align-items:center; gap:6px; }
+  .proj-links a:hover{ color:var(--accent2); }
+
+  .divider{ height:1px; background:var(--border); margin:120px 0; }
+
+  /* StockSense chart */
+  .chart-wrap{ position:relative; }
+  .scan-line{ stroke:var(--accent2); stroke-width:1; opacity:0; }
+  .pattern-zone{ fill:rgba(169,155,255,0.08); stroke:var(--accent2); stroke-dasharray:3 3; opacity:0; transition:opacity .5s ease; }
+  .verdict{ font-family:var(--mono); font-size:12px; padding:4px 10px; border-radius:2px; opacity:0; transition:opacity .4s ease; }
+  .verdict.bullish{ color:var(--output); border:1px solid rgba(255,121,102,0.4); }
+
+  /* ISL landmarks */
+  .isl-dot{ fill:var(--accent2); opacity:0; transition:opacity .3s ease; }
+  .isl-edge{ stroke:var(--inactive); stroke-width:1; opacity:0; transition:opacity .3s ease, stroke .3s ease; }
+  .isl-edge.lit{ stroke:var(--accent); opacity:1; }
+  .isl-out{ font-family:var(--mono); font-size:20px; fill:var(--output); opacity:0; transition:opacity .4s ease; }
+
+  /* ---------- EXPERIENCE ---------- */
+  .timeline{ position:relative; padding-left:28px; }
+  .timeline::before{
+    content:""; position:absolute; left:4px; top:6px; bottom:6px; width:1px;
+    background:var(--border);
+  }
+  .timeline-path{ position:absolute; left:0; top:0; width:9px; }
+  .tl-item{ position:relative; padding-bottom:44px; }
+  .tl-item:last-child{ padding-bottom:0; }
+  .tl-dot{
+    position:absolute; left:-28px; top:5px; width:9px; height:9px; border-radius:50%;
+    background:var(--surface); border:1.4px solid var(--accent2);
+  }
+  .tl-role{ font-size:18px; font-weight:600; }
+  .tl-org{ color:var(--accent2); font-family:var(--mono); font-size:12.5px; margin-top:2px; }
+  .tl-date{ color:var(--muted); font-family:var(--mono); font-size:11.5px; margin-top:4px; }
+  .tl-bullets{ margin-top:12px; color:var(--text2); font-size:14.5px; }
+  .tl-bullets li{ list-style:none; padding-left:16px; position:relative; margin-bottom:6px; }
+  .tl-bullets li::before{ content:"—"; position:absolute; left:0; color:var(--muted); }
+  .tl-link{
+    margin-top:14px; font-family:var(--mono); font-size:12px; color:var(--muted);
+    display:flex; align-items:center; gap:8px;
+  }
+
+  /* ---------- EDUCATION ---------- */
+  .edu-grid{ display:grid; grid-template-columns:1fr 1fr; gap:48px; }
+  @media (max-width:800px){ .edu-grid{ grid-template-columns:1fr; } }
+  .edu-item{ margin-bottom:28px; }
+  .edu-item h4{ font-size:16.5px; font-weight:600; }
+  .edu-item .deg{ color:var(--text2); font-size:14px; margin-top:3px; }
+  .edu-item .yr{ color:var(--muted); font-family:var(--mono); font-size:12px; margin-top:4px; }
+  .signal-chain{
+    display:flex; align-items:center; gap:0; margin-top:36px;
+    font-family:var(--mono); font-size:11px; color:var(--muted); flex-wrap:wrap;
+  }
+  .signal-chain span.step{ padding:6px 12px; border:1px solid var(--border); border-radius:2px; color:var(--text2); }
+  .signal-chain span.arrow{ padding:0 8px; color:var(--muted); }
+
+  /* ---------- LEADERSHIP ---------- */
+  .lead-list{ display:flex; flex-direction:column; gap:26px; }
+  .lead-row{
+    display:flex; justify-content:space-between; align-items:baseline;
+    border-bottom:1px solid var(--border); padding-bottom:18px; flex-wrap:wrap; gap:8px;
+  }
+  .lead-org{ font-size:16px; font-weight:600; }
+  .lead-role{ color:var(--text2); font-size:14px; margin-top:3px; }
+  .lead-date{ font-family:var(--mono); font-size:11.5px; color:var(--muted); white-space:nowrap; }
+
+  /* ---------- CONTACT ---------- */
+  .contact-stage{ position:relative; height:340px; }
+  @media (max-width:640px){ .contact-stage{ height:280px; } }
+  .contact-copy{ text-align:center; margin-top:28px; }
+  .contact-copy h2{ font-size:clamp(28px,4vw,44px); }
+  .contact-copy p{ color:var(--text2); margin-top:14px; font-size:15.5px; }
+  .contact-links{ display:flex; justify-content:center; gap:28px; margin-top:34px; flex-wrap:wrap; }
+  .contact-links a{ font-family:var(--mono); font-size:13px; color:var(--text2); display:flex; align-items:center; gap:6px; }
+  .contact-links a:hover{ color:var(--output); }
+
+  footer{ border-top:1px solid var(--border); padding:36px 0; }
+  .footer-inner{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+  .footer-inner .l{ color:var(--muted); font-size:13px; }
+  .footer-inner .r{ display:flex; gap:18px; font-size:13px; color:var(--text2); }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; scroll-behavior:auto !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <div class="nav-mark">M<span>.</span>GARG</div>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#hero" data-sec="hero"><span class="n">01</span>Profile<span class="nav-node"></span></a></li>
+      <li><a href="#projects" data-sec="projects"><span class="n">02</span>Systems<span class="nav-node"></span></a></li>
+      <li><a href="#experience" data-sec="experience"><span class="n">03</span>Experience<span class="nav-node"></span></a></li>
+      <li><a href="#education" data-sec="education"><span class="n">04</span>Education<span class="nav-node"></span></a></li>
+      <li><a href="#contact" data-sec="contact"><span class="n">05</span>Contact<span class="nav-node"></span></a></li>
+    </ul>
+  </div>
+</header>
+
+<div class="rail" id="rail">
+  <button data-sec="hero" aria-label="Profile"><span class="rail-dot"></span></button>
+  <button data-sec="projects" aria-label="Systems"><span class="rail-dot"></span></button>
+  <button data-sec="experience" aria-label="Experience"><span class="rail-dot"></span></button>
+  <button data-sec="education" aria-label="Education"><span class="rail-dot"></span></button>
+  <button data-sec="contact" aria-label="Contact"><span class="rail-dot"></span></button>
+</div>
+
+<!-- ================= HERO ================= -->
+<section class="hero" id="hero">
+  <div class="hero-inner">
+    <div class="hero-stage" id="heroStage">
+      <svg class="hero-net" id="heroNet"></svg>
+      <div class="hero-name">
+        <h1>MUKUND<br>GARG</h1>
+        <div class="role">AI / ML · BACKEND · COMPUTER VISION</div>
+      </div>
+    </div>
+    <div class="hero-foot reveal in">
+      <div>
+        <p class="hero-tagline">Building intelligent systems from data, models and code.</p>
+        <p class="hero-sub">ECE @ MSIT · Delhi, India</p>
+      </div>
+      <div class="cta-row">
+        <a href="#projects" class="btn primary">Explore Systems <span class="arrow">→</span></a>
+        <a href="#" class="btn ghost">View Resume <span class="arrow">→</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ABOUT / KNOWLEDGE GRAPH ================= -->
+<section id="about">
+  <div class="wrap">
+    <div class="eyebrow"><span class="num">01</span> Profile</div>
+    <div class="about-grid">
+      <div class="about-copy reveal">
+        <h2>An Electronics &amp; Communication Engineering student focused on machine learning, deep learning, computer vision, NLP and backend development.</h2>
+        <p>I enjoy building end-to-end systems that combine models, APIs, automation and real-world applications — from a working pipeline to a deployed endpoint.</p>
+        <div class="focus-tags">
+          <span>AI / ML</span><span>Backend</span><span>Computer Vision</span><span>NLP</span><span>Applied AI</span>
+        </div>
+        <div class="code-frag">
+          <span class="kw">model</span>.<span class="fn">fit</span>(X_train, y_train)<br>
+          <span class="kw">@app.post</span>(<span class="str">"/predict"</span>)<br>
+          <span class="kw">async def</span> <span class="fn">predict</span>(payload: Input):
+        </div>
+      </div>
+      <div class="kg-stage reveal" id="kgStage">
+        <svg id="kgSvg" width="100%" height="100%" viewBox="0 0 520 460"></svg>
+        <div class="kg-hint">hover a node</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PROJECTS ================= -->
+<section id="projects">
+  <div class="wrap">
+    <div class="eyebrow"><span class="num">02</span> Selected Systems</div>
+
+    <!-- MailPilot -->
+    <div class="proj-head reveal">
+      <h3>SYS-01 — MailPilot</h3>
+      <span class="proj-tag mono">outreach automation</span>
+    </div>
+    <p class="proj-desc reveal">A cold-outreach engine that turns a spreadsheet of contacts into personalized, scheduled campaigns — with follow-ups and reply detection handled automatically.</p>
+    <div class="metrics reveal">
+      <div class="metric"><div class="num" data-count="3">00</div><div class="lbl">Input Modes</div></div>
+      <div class="metric"><div class="num" data-count="4">00</div><div class="lbl">Follow-ups</div></div>
+      <div class="metric"><div class="num" data-count="2">00</div><div class="lbl">Duplicate Modes</div></div>
+    </div>
+    <div class="diagram-box reveal" id="mailpilotBox">
+      <svg id="mailpilotSvg" width="100%" height="420" viewBox="0 0 900 420" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <div class="code-frag" style="margin-top:18px; max-width:420px;">
+      <span class="kw">@app.post</span>(<span class="str">"/campaign"</span>)<br>
+      <span class="kw">async def</span> <span class="fn">create_campaign</span>(cfg: Campaign):
+    </div>
+    <div class="proj-links">
+      <a href="#">GitHub →</a><a href="#">Architecture →</a>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- StockSense -->
+    <div class="proj-head reveal">
+      <h3>SYS-02 — StockSense AI</h3>
+      <span class="proj-tag mono">chart + document intelligence</span>
+    </div>
+    <p class="proj-desc reveal">Two workflows in one tool: an LLM reads financial documents for a plain-language summary, while a vision pipeline scans chart images for recognizable patterns.</p>
+    <div class="metrics reveal">
+      <div class="metric"><div class="num" data-count="9">00</div><div class="lbl">Chart Patterns</div></div>
+      <div class="metric"><div class="num" data-count="2">00</div><div class="lbl">LLM Providers</div></div>
+      <div class="metric"><div class="num" data-count="2">00</div><div class="lbl">Analysis Workflows</div></div>
+    </div>
+    <div class="diagram-box reveal chart-wrap" id="stockBox">
+      <svg id="stockSvg" width="100%" height="380" viewBox="0 0 900 380" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <div class="code-frag" style="margin-top:18px; max-width:420px;">
+      <span class="kw">@app.post</span>(<span class="str">"/analyze-chart"</span>)<br>
+      <span class="kw">async def</span> <span class="fn">analyze_chart</span>(img: UploadFile):
+    </div>
+    <div class="proj-links">
+      <a href="#">Live Demo →</a><a href="#">GitHub →</a>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ISL -->
+    <div class="proj-head reveal">
+      <h3>SYS-03 — Offline ISL Translator</h3>
+      <span class="proj-tag mono">computer vision · on-device</span>
+    </div>
+    <p class="proj-desc reveal">Translates Indian Sign Language gestures to text entirely offline — landmark detection, stabilization and inference all run on-device, CPU or GPU.</p>
+    <div class="metrics reveal">
+      <div class="metric"><div class="num" data-count="32">00</div><div class="lbl">Outputs</div></div>
+      <div class="metric"><div class="num" data-count="26">00</div><div class="lbl">Alphabet Signs</div></div>
+      <div class="metric"><div class="num" data-count="6">00</div><div class="lbl">Fixed Words</div></div>
+    </div>
+    <div class="diagram-box reveal" id="islBox">
+      <svg id="islSvg" width="100%" height="380" viewBox="0 0 900 380" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <p class="hero-sub reveal" style="margin-top:14px;">offline inference · CPU / GPU options</p>
+    <div class="proj-links"><a href="#">GitHub →</a></div>
+  </div>
+</section>
+
+<!-- ================= EXPERIENCE ================= -->
+<section id="experience">
+  <div class="wrap">
+    <div class="eyebrow"><span class="num">03</span> Experience</div>
+    <div class="timeline reveal">
+      <div class="tl-item">
+        <span class="tl-dot"></span>
+        <div class="tl-role">Operations &amp; Workflow Automation Intern</div>
+        <div class="tl-org">IQLIPSE</div>
+        <div class="tl-date">Jul 2026 – Aug 2026</div>
+        <ul class="tl-bullets">
+          <li>Observed and mapped recurring operational workflows to identify automation opportunities.</li>
+          <li>Worked on process automation that later informed the design of MailPilot.</li>
+        </ul>
+        <div class="tl-link mono">Iqlipse → workflow observation → MailPilot</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= EDUCATION ================= -->
+<section id="education">
+  <div class="wrap">
+    <div class="eyebrow"><span class="num">04</span> Education</div>
+    <div class="edu-grid">
+      <div class="reveal">
+        <div class="edu-item">
+          <h4>Maharaja Surajmal Institute of Technology</h4>
+          <div class="deg">B.Tech, Electronics &amp; Communication Engineering</div>
+          <div class="yr">2025 – 2029 · First-Year CGPA 8.82/10</div>
+        </div>
+        <div class="edu-item">
+          <h4>Bal Bharati Public School</h4>
+          <div class="deg">Old Rajinder Nagar, Delhi</div>
+          <div class="yr">Class XII: 91% · Class X: 94.2%</div>
+        </div>
+      </div>
+      <div class="reveal">
+        <div class="eyebrow" style="margin-bottom:14px;"><span class="num"></span>Leadership</div>
+        <div class="lead-list">
+          <div class="lead-row">
+            <div><div class="lead-org">Microsoft Student Chapter</div><div class="lead-role">Deputy Head, AI/ML Department</div></div>
+            <div class="lead-date">Aug 2026 – Present</div>
+          </div>
+          <div class="lead-row">
+            <div><div class="lead-org">Microsoft Student Chapter</div><div class="lead-role">AI/ML Department Member</div></div>
+            <div class="lead-date">Sep 2025 – Aug 2026</div>
+          </div>
+          <div class="lead-row">
+            <div><div class="lead-org">e-Yantra Robotics Club</div><div class="lead-role">PR &amp; Sponsorship Head</div></div>
+            <div class="lead-date">Aug 2026 – Present</div>
+          </div>
+          <div class="lead-row" style="border-bottom:none;">
+            <div><div class="lead-org">e-Yantra Robotics Club</div><div class="lead-role">PR &amp; Sponsorship Member</div></div>
+            <div class="lead-date">Sep 2025 – Aug 2026</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="signal-chain reveal" id="signalChain">
+      <span class="step">ECE</span><span class="arrow">→</span>
+      <span class="step">SIGNALS</span><span class="arrow">→</span>
+      <span class="step">DATA</span><span class="arrow">→</span>
+      <span class="step">MODELS</span><span class="arrow">→</span>
+      <span class="step">SYSTEMS</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CONTACT ================= -->
+<section id="contact">
+  <div class="wrap">
+    <div class="eyebrow"><span class="num">05</span> Contact</div>
+    <div class="contact-stage">
+      <svg id="contactSvg" width="100%" height="100%" viewBox="0 0 900 260" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <div class="contact-copy reveal">
+      <h2>Let's connect.</h2>
+      <p>Have an interesting problem? Let's build something that works beyond the prototype.</p>
+      <div class="contact-links">
+        <a href="mailto:hello@mukundgarg.dev">Email →</a>
+        <a href="#">LinkedIn →</a>
+        <a href="#">GitHub →</a>
+        <a href="#">Resume →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footer-inner">
+    <div class="l">Mukund Garg · Delhi, India</div>
+    <div class="r"><a href="#">GitHub</a><a href="#">LinkedIn</a></div>
+    <div class="l">2026</div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  const SVGNS = "http://www.w3.org/2000/svg";
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const el = (tag, attrs) => {
+    const n = document.createElementNS(SVGNS, tag);
+    for(const k in attrs) n.setAttribute(k, attrs[k]);
+    return n;
+  };
+
+  /* ============ NAV SCROLLSPY ============ */
+  const sections = ["hero","projects","experience","education","contact"];
+  const navLinks = document.querySelectorAll('#navLinks a');
+  const railBtns = document.querySelectorAll('#rail button');
+  function setActive(id){
+    navLinks.forEach(a => a.classList.toggle('active', a.dataset.sec === id));
+    railBtns.forEach(b => b.classList.toggle('active', b.dataset.sec === id));
+  }
+  const spyObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting) setActive(e.target.id); });
+  }, { rootMargin: "-45% 0px -45% 0px" });
+  sections.forEach(id=>{ const s = document.getElementById(id); if(s) spyObserver.observe(s); });
+  railBtns.forEach(b=> b.addEventListener('click', ()=> document.getElementById(b.dataset.sec).scrollIntoView({behavior: reduced?'auto':'smooth'})));
+
+  /* ============ REVEAL ON SCROLL ============ */
+  const revealObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); revealObserver.unobserve(e.target); } });
+  }, { threshold:0.15 });
+  document.querySelectorAll('.reveal').forEach(n=> revealObserver.observe(n));
+
+  /* ============ COUNTERS ============ */
+  const counters = document.querySelectorAll('.metric .num');
+  const countObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(!e.isIntersecting) return;
+      const node = e.target, target = parseInt(node.dataset.count,10);
+      if(reduced){ node.textContent = String(target).padStart(2,'0'); countObserver.unobserve(node); return; }
+      let cur = 0; const step = Math.max(1, Math.round(target/20));
+      const iv = setInterval(()=>{
+        cur += step;
+        if(cur >= target){ cur = target; clearInterval(iv); }
+        node.textContent = String(cur).padStart(2,'0');
+      }, 40);
+      countObserver.unobserve(node);
+    });
+  }, {threshold:0.6});
+  counters.forEach(c=>countObserver.observe(c));
+
+  /* ============ HERO NEURAL NETWORK ============ */
+  const heroSvg = document.getElementById('heroNet');
+  const heroStage = document.getElementById('heroStage');
+  let layers = window.innerWidth < 640 ? [3,4,3,1] : [4,6,5,2];
+  let W = 0, H = 0;
+  let nodePositions = []; // [layerIdx] -> [{x,y,el}]
+  let edgeEls = []; // {a,b,el,layerFrom}
+
+  function buildHeroNet(){
+    heroSvg.innerHTML = "";
+    nodePositions = []; edgeEls = [];
+    const rect = heroStage.getBoundingClientRect();
+    W = rect.width; H = rect.height;
+    heroSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const marginX = W * 0.09;
+    const usableW = W - marginX*2;
+    const layerX = layers.map((_,i)=> marginX + (usableW * i/(layers.length-1)));
+
+    layers.forEach((count, li)=>{
+      const arr = [];
+      const gapY = H / (count+1);
+      for(let i=0;i<count;i++){
+        const x = layerX[li];
+        const y = gapY*(i+1);
+        const g = el('g', {class:'node'+(li===layers.length-1?' output':''), 'data-l':li, 'data-i':i});
+        const c = el('circle', {cx:x, cy:y, r:5});
+        g.appendChild(c);
+        heroSvg.appendChild(g);
+        arr.push({x,y,el:g,circle:c});
+      }
+      nodePositions.push(arr);
+    });
+
+    // edges: each node connects to a random subset of next layer (2-3) for organized but not fully-dense look
+    for(let li=0; li<layers.length-1; li++){
+      nodePositions[li].forEach((a, ai)=>{
+        const nextArr = nodePositions[li+1];
+        const connections = Math.min(nextArr.length, 3);
+        const indices = [...nextArr.keys()].sort(()=>Math.random()-0.5).slice(0, connections);
+        indices.forEach(bi=>{
+          const b = nextArr[bi];
+          const midx = (a.x+b.x)/2;
+          const d = `M ${a.x} ${a.y} C ${midx} ${a.y}, ${midx} ${b.y}, ${b.x} ${b.y}`;
+          const path = el('path', {d, class:'edge'});
+          heroSvg.insertBefore(path, heroSvg.firstChild);
+          edgeEls.push({from:[li,ai], to:[li+1,bi], el:path, isOutput: li+1===layers.length-1});
+        });
+      });
+    }
+  }
+  buildHeroNet();
+
+  function edgesFrom(li, ai){ return edgeEls.filter(e=> e.from[0]===li && e.from[1]===ai); }
+
+  function clearActive(){
+    document.querySelectorAll('#heroNet .node.active').forEach(n=>n.classList.remove('active'));
+    edgeEls.forEach(e=> e.el.classList.remove('lit','output-edge'));
+  }
+
+  const packetLabels = ["DATA","IMAGE","TEXT","SIGNAL","API"];
+  const outputLabels = ["SYSTEM","INSIGHT","GESTURE","AUTOMATION"];
+  let packetIdx = 0, running = false;
+
+  function propagate(){
+    if(running) return;
+    running = true;
+    clearActive();
+    const inputCount = layers[0];
+    const startIdx = Math.floor(Math.random()*inputCount);
+    let path = [[0, startIdx]];
+    for(let li=0; li<layers.length-1; li++){
+      const [pl, pi] = path[path.length-1];
+      const opts = edgesFrom(pl, pi);
+      if(opts.length===0){ break; }
+      const choice = opts[Math.floor(Math.random()*opts.length)];
+      path.push(choice.to);
+    }
+    const label = packetLabels[packetIdx % packetLabels.length];
+    packetIdx++;
+
+    let step = 0;
+    const delay = reduced ? 0 : 480;
+    function activateStep(){
+      if(step >= path.length){ running=false; return; }
+      const [li, ni] = path[step];
+      const nodeObj = nodePositions[li][ni];
+      nodeObj.el.classList.add('active');
+      if(step>0){
+        const [pli,pni] = path[step-1];
+        const edge = edgesFrom(pli,pni).find(e=> e.to[0]===li && e.to[1]===ni);
+        if(edge){ edge.el.classList.add('lit'); if(edge.isOutput) edge.el.classList.add('output-edge'); }
+      }
+      if(li===0){ showPacketLabel(nodeObj, label); }
+      if(li===layers.length-1){ showOutputLabel(nodeObj, outputLabels[Math.floor(Math.random()*outputLabels.length)]); }
+      step++;
+      if(reduced){ activateStep(); } else { setTimeout(activateStep, delay); }
+    }
+    activateStep();
+    if(!reduced){
+      setTimeout(()=>{ clearActive(); }, delay*(path.length+2));
+    } else { setTimeout(clearActive, 600); }
+  }
+
+  function showPacketLabel(nodeObj, text){
+    const lbl = document.createElement('div');
+    lbl.className = 'packet-label mono';
+    lbl.textContent = text;
+    heroStage.appendChild(lbl);
+    lbl.style.left = (nodeObj.x - 40) + 'px';
+    lbl.style.top = (nodeObj.y - 26) + 'px';
+    requestAnimationFrame(()=> lbl.style.opacity = 1);
+    setTimeout(()=>{ lbl.style.opacity = 0; setTimeout(()=>lbl.remove(), 300); }, 900);
+  }
+  function showOutputLabel(nodeObj, text){
+    const lbl = document.createElement('div');
+    lbl.className = 'output-label mono';
+    lbl.textContent = text;
+    heroStage.appendChild(lbl);
+    lbl.style.left = (nodeObj.x + 12) + 'px';
+    lbl.style.top = (nodeObj.y - 10) + 'px';
+    requestAnimationFrame(()=> lbl.style.opacity = 1);
+    setTimeout(()=>{ lbl.style.opacity = 0; setTimeout(()=>lbl.remove(), 400); }, 1300);
+  }
+
+  // initial sequence: a few packets in a row, then idle pulses
+  let idleTimer = null;
+  function startIdleLoop(){
+    if(idleTimer) clearInterval(idleTimer);
+    idleTimer = setInterval(()=>{ if(document.visibilityState==='visible') propagate(); }, reduced ? 6000 : 4200);
+  }
+  setTimeout(propagate, 500);
+  setTimeout(propagate, 1800);
+  setTimeout(propagate, 3100);
+  setTimeout(startIdleLoop, 4200);
+
+  // cursor proximity
+  heroStage.addEventListener('pointermove', (e)=>{
+    if(reduced) return;
+    const rect = heroStage.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    nodePositions.flat().forEach(n=>{
+      const dist = Math.hypot(n.x-mx, n.y-my);
+      n.el.classList.toggle('hovered', dist < 26);
+    });
+  });
+  heroStage.addEventListener('pointerleave', ()=>{
+    nodePositions.flat().forEach(n=> n.el.classList.remove('hovered'));
+  });
+
+  window.addEventListener('resize', ()=>{
+    const newLayers = window.innerWidth < 640 ? [3,4,3,1] : [4,6,5,2];
+    if(JSON.stringify(newLayers)!==JSON.stringify(layers) || true){
+      layers = newLayers;
+      buildHeroNet();
+    }
+  });
+
+  /* ============ KNOWLEDGE GRAPH ============ */
+  const kgSvg = document.getElementById('kgSvg');
+  const kgData = {
+    root: {x:260, y:230, label:"MUKUND"},
+    branches: [
+      { label:"BACKEND", x:70, y:230, children:[{label:"FastAPI", x:40, y:180},{label:"APIs", x:30, y:280}] },
+      { label:"COMPUTER VISION", x:260, y:60, children:[{label:"OpenCV", x:260, y:20}] },
+      { label:"MACHINE LEARNING", x:450, y:230, children:[{label:"XGBoost", x:480, y:180},{label:"SVM", x:490, y:280}] },
+      { label:"NLP", x:260, y:400, children:[{label:"Transformers", x:260, y:440}] },
+    ]
+  };
+  function buildKG(){
+    kgSvg.innerHTML = "";
+    const {root, branches} = kgData;
+    branches.forEach(b=>{
+      const edge = el('path', {class:'kg-edge', d:`M ${root.x} ${root.y} L ${b.x} ${b.y}`});
+      kgSvg.appendChild(edge);
+      const g = el('g', {class:'kg-node kg-branch'});
+      g.appendChild(el('circle', {cx:b.x, cy:b.y, r:5}));
+      const t = el('text', {x:b.x + (b.x<root.x?-12:12), y:b.y+4, 'text-anchor': b.x<root.x?'end':'start'});
+      t.textContent = b.label;
+      g.appendChild(t);
+      kgSvg.appendChild(g);
+
+      const childGroup = el('g', {class:'kg-children'});
+      (b.children||[]).forEach(c=>{
+        const ce = el('path', {class:'kg-edge', d:`M ${b.x} ${b.y} L ${c.x} ${c.y}`});
+        childGroup.appendChild(ce);
+        const cg = el('g', {class:'kg-node'});
+        cg.appendChild(el('circle', {cx:c.x, cy:c.y, r:3.5}));
+        const ct = el('text', {x:c.x + (c.x<b.x?-10:10), y:c.y+4, 'text-anchor': c.x<b.x?'end':'start'});
+        ct.textContent = c.label;
+        ct.setAttribute('class','mono');
+        cg.appendChild(ct);
+        childGroup.appendChild(cg);
+      });
+      kgSvg.appendChild(childGroup);
+      g.addEventListener('mouseenter', ()=>{ childGroup.classList.add('open'); edge.classList.add('lit'); });
+      g.addEventListener('mouseleave', ()=>{ childGroup.classList.remove('open'); edge.classList.remove('lit'); });
+      g.addEventListener('click', ()=> childGroup.classList.toggle('open'));
+    });
+    const rootG = el('g', {class:'kg-node root'});
+    rootG.appendChild(el('circle', {cx:root.x, cy:root.y, r:7}));
+    const rt = el('text', {x:root.x, y:root.y-14, 'text-anchor':'middle'});
+    rt.textContent = root.label;
+    rootG.appendChild(rt);
+    kgSvg.appendChild(rootG);
+  }
+  buildKG();
+
+  /* ============ MAILPILOT DIAGRAM ============ */
+  const mpSvg = document.getElementById('mailpilotSvg');
+  function buildMailpilot(){
+    mpSvg.innerHTML = "";
+    const nodes = {
+      csv:      {x:70,  y:90,  w:100, h:44, label:"CSV"},
+      sheets:   {x:70,  y:200, w:130, h:44, label:"GOOGLE SHEETS"},
+      manual:   {x:70,  y:310, w:110, h:44, label:"MANUAL"},
+      pers:     {x:320, y:150, w:170, h:44, label:"PERSONALIZATION"},
+      sched:    {x:320, y:260, w:170, h:44, label:"SCHEDULER"},
+      gmail:    {x:600, y:205, w:150, h:44, label:"GMAIL API"},
+      follow:   {x:820, y:120, w:150, h:44, label:"FOLLOW-UP", offsetFix:true},
+      reply:    {x:820, y:290, w:150, h:44, label:"REPLY CHECK"},
+    };
+    // adjust to fit viewBox 900 width -> shift follow/reply
+    nodes.follow.x = 700; nodes.follow.y = 60;
+    nodes.reply.x = 700; nodes.reply.y = 350;
+    const status = {x:600, y:340, w:170, h:40, label:"STATUS SYNC"};
+
+    function box(n, key){
+      const g = el('g', {class:'node-box-g', 'data-key':key});
+      const r = el('rect', {x:n.x, y:n.y, width:n.w, height:n.h, rx:4, class:'node-box'});
+      g.appendChild(r);
+      const t = el('text', {x:n.x+n.w/2, y:n.y+n.h/2+4, 'text-anchor':'middle'});
+      t.textContent = n.label;
+      g.appendChild(t);
+      mpSvg.appendChild(g);
+      return r;
+    }
+    const rects = {};
+    Object.keys(nodes).forEach(k=> rects[k]=box(nodes[k],k));
+    const statusRect = el('rect', {x:status.x, y:status.y, width:status.w, height:status.h, rx:4, class:'node-box'});
+    mpSvg.appendChild(statusRect);
+    const statusText = el('text', {x:status.x+status.w/2, y:status.y+status.h/2+4, 'text-anchor':'middle'});
+    statusText.textContent = status.label;
+    mpSvg.appendChild(statusText);
+
+    function edgeC(a, b, key){
+      const ax = a.x+a.w, ay = a.y+a.h/2;
+      const bx = b.x, by = b.y+b.h/2;
+      const midx = (ax+bx)/2;
+      const d = `M ${ax} ${ay} C ${midx} ${ay}, ${midx} ${by}, ${bx} ${by}`;
+      const p = el('path', {d, class:'flow-edge', 'data-key':key});
+      mpSvg.insertBefore(p, mpSvg.firstChild);
+      return p;
+    }
+    const edges = {
+      csvToPers: edgeC(nodes.csv, nodes.pers, 'e1'),
+      sheetsToPers: edgeC(nodes.sheets, nodes.pers, 'e2'),
+      manualToSched: edgeC(nodes.manual, nodes.sched, 'e3'),
+      persToSched: edgeC(nodes.pers, nodes.sched, 'e4'),
+      schedToGmail: edgeC(nodes.sched, nodes.gmail, 'e5'),
+      persToGmail: edgeC(nodes.pers, nodes.gmail, 'e6'),
+      gmailToFollow: edgeC(nodes.gmail, nodes.follow, 'e7'),
+      gmailToReply: edgeC(nodes.gmail, nodes.reply, 'e8'),
+      followToStatus: edgeC(nodes.follow, status, 'e9'),
+      replyToStatus: edgeC(nodes.reply, status, 'e10'),
+    };
+    return {nodes, rects, edges, status, statusRect};
+  }
+  const mp = buildMailpilot();
+
+  function runMailpilotFlow(){
+    const seq = [
+      [['csv'], ['e1']],
+      [['pers'], []],
+      [['sched'], ['e4']],
+      [['gmail'], ['e5']],
+      [['follow'], ['e7']],
+      [['reply'], ['e8']],
+      [[], ['e9']],
+    ];
+    let i = 0;
+    Object.values(mp.rects).forEach(r=>r.classList.remove('active'));
+    mp.statusRect.classList.remove('active');
+    Object.values(mp.edges).forEach(e=>e.classList.remove('lit'));
+    function step(){
+      if(i>=seq.length){ return; }
+      const [nodeKeys, edgeKeys] = seq[i];
+      nodeKeys.forEach(k=> mp.rects[k] && mp.rects[k].classList.add('active'));
+      edgeKeys.forEach(k=> mp.edges[k] && mp.edges[k].classList.add('lit'));
+      if(i===seq.length-1) mp.statusRect.classList.add('active');
+      i++;
+      setTimeout(step, reduced?0:550);
+    }
+    step();
+  }
+  const mpObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ runMailpilotFlow(); } });
+  }, {threshold:0.4});
+  mpObserver.observe(document.getElementById('mailpilotBox'));
+
+  /* ============ STOCKSENSE CHART ============ */
+  const stockSvg = document.getElementById('stockSvg');
+  function buildStock(){
+    stockSvg.innerHTML = "";
+    // axis
+    stockSvg.appendChild(el('line', {x1:60, y1:320, x2:860, y2:320, stroke:'var(--border)'}));
+    stockSvg.appendChild(el('line', {x1:60, y1:40, x2:60, y2:320, stroke:'var(--border)'}));
+    const pts = [60,90,120,150,190,230,270,310,360,410,460,510,560,610,660,710,760,810,860]
+      .map((x,i)=>{
+        const base = 260 - Math.sin(i/2)*30 - i*2;
+        const noise = (Math.sin(i*3.1)*14);
+        return [x, Math.max(60, base+noise)];
+      });
+    const d = "M " + pts.map(p=>p.join(" ")).join(" L ");
+    const path = el('path', {d, stroke:'var(--accent2)', 'stroke-width':1.6, fill:'none', id:'stockLine'});
+    const len = 1000;
+    path.setAttribute('stroke-dasharray', len);
+    path.setAttribute('stroke-dashoffset', len);
+    stockSvg.appendChild(path);
+
+    const zone = el('rect', {class:'pattern-zone', x:560, y:120, width:140, height:110, rx:4});
+    stockSvg.appendChild(zone);
+
+    const scan = el('line', {class:'scan-line', x1:60, y1:40, x2:60, y2:320});
+    stockSvg.appendChild(scan);
+
+    const label = el('text', {x:630, y:110, class:'mono', fill:'var(--accent2)', 'text-anchor':'middle', 'font-size':11});
+    label.textContent = "PATTERN DETECTED";
+    label.style.opacity = 0;
+    label.style.transition = "opacity .4s ease";
+    stockSvg.appendChild(label);
+
+    const verdict = el('text', {x:630, y:150, class:'mono', fill:'var(--output)', 'text-anchor':'middle', 'font-size':13, 'font-weight':600});
+    verdict.textContent = "BULLISH";
+    verdict.style.opacity = 0;
+    verdict.style.transition = "opacity .4s ease";
+    stockSvg.appendChild(verdict);
+
+    return {path, zone, scan, label, verdict};
+  }
+  const stock = buildStock();
+  function runStockFlow(){
+    if(reduced){
+      stock.path.style.strokeDashoffset = 0;
+      stock.zone.style.opacity = 1;
+      stock.label.style.opacity = 1;
+      stock.verdict.style.opacity = 1;
+      return;
+    }
+    stock.path.style.transition = "stroke-dashoffset 1.8s ease";
+    requestAnimationFrame(()=> stock.path.style.strokeDashoffset = 0);
+    setTimeout(()=>{
+      stock.scan.style.transition = "opacity .2s ease";
+      stock.scan.style.opacity = 1;
+      let x = 60;
+      const iv = setInterval(()=>{
+        x += 16;
+        stock.scan.setAttribute('x1', x); stock.scan.setAttribute('x2', x);
+        if(x >= 860){ clearInterval(iv); stock.scan.style.opacity = 0; revealVerdict(); }
+      }, 18);
+    }, 1900);
+    function revealVerdict(){
+      stock.zone.style.opacity = 1;
+      setTimeout(()=>{ stock.label.style.opacity = 1; }, 200);
+      setTimeout(()=>{ stock.verdict.style.opacity = 1; }, 500);
+    }
+  }
+  let stockRan = false;
+  const stockObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting && !stockRan){ stockRan = true; runStockFlow(); } });
+  }, {threshold:0.4});
+  stockObserver.observe(document.getElementById('stockBox'));
+
+  /* ============ ISL LANDMARKS ============ */
+  const islSvg = document.getElementById('islSvg');
+  function buildISL(){
+    islSvg.innerHTML = "";
+    // simple abstract hand landmark layout (21-ish points simplified to ~14)
+    const base = {x:430, y:280};
+    const points = [
+      [0,0],[-40,-40],[-60,-90],[-70,-130],[-78,-165], // thumb chain
+      [-10,-60],[-8,-120],[-6,-160],[-4,-190], // index
+      [15,-65],[18,-130],[20,-172],[22,-205], // middle
+      [40,-55],[45,-110],[48,-148],[50,-178], // ring
+    ].map(([dx,dy])=>[base.x+dx, base.y+dy]);
+    const chains = [
+      [0,1,2,3,4],
+      [0,5,6,7,8],
+      [0,9,10,11,12],
+      [0,13,14,15,16],
+    ];
+    const dots = points.map(([x,y])=> {
+      const c = el('circle', {cx:x, cy:y, r:3.5, class:'isl-dot'});
+      islSvg.appendChild(c);
+      return c;
+    });
+    const edges = [];
+    chains.forEach(chain=>{
+      for(let i=0;i<chain.length-1;i++){
+        const [ax,ay] = points[chain[i]], [bx,by] = points[chain[i+1]];
+        const e = el('line', {x1:ax,y1:ay,x2:bx,y2:by, class:'isl-edge'});
+        islSvg.insertBefore(e, islSvg.firstChild);
+        edges.push(e);
+      }
+    });
+    // architecture chain text
+    const archLabels = ["CAMERA","FRAME","VISION MODEL","STABILIZATION","GESTURE","TEXT"];
+    const archG = el('g', {});
+    archLabels.forEach((lab,i)=>{
+      const x = 80, y = 60 + i*48;
+      const t = el('text', {x, y, class:'mono', fill:'var(--muted)', 'font-size':11, 'data-i':i});
+      t.textContent = lab;
+      archG.appendChild(t);
+      if(i<archLabels.length-1){
+        const l = el('line', {x1:x+10, y1:y+10, x2:x+10, y2:y+38, stroke:'var(--border)'});
+        archG.appendChild(l);
+      }
+    });
+    islSvg.appendChild(archG);
+
+    const outText = el('text', {x:base.x, y:60, class:'isl-out', 'text-anchor':'middle'});
+    outText.textContent = "HELLO";
+    islSvg.appendChild(outText);
+
+    return {dots, edges, archG, outText};
+  }
+  const isl = buildISL();
+  function runISLFlow(){
+    if(reduced){
+      isl.dots.forEach(d=>d.style.opacity=1);
+      isl.edges.forEach(e=>{e.style.opacity=1; e.classList.add('lit');});
+      isl.outText.style.opacity = 1;
+      isl.archG.querySelectorAll('text').forEach(t=> t.style.fill = 'var(--text)');
+      return;
+    }
+    isl.dots.forEach((d,i)=> setTimeout(()=> d.style.opacity = 1, i*45));
+    setTimeout(()=>{
+      isl.edges.forEach((e,i)=> setTimeout(()=>{ e.style.opacity=1; e.classList.add('lit'); }, i*35));
+    }, isl.dots.length*45 + 100);
+    const archTexts = isl.archG.querySelectorAll('text');
+    archTexts.forEach((t,i)=> setTimeout(()=>{ t.style.transition='fill .3s ease'; t.style.fill='var(--text)'; }, 300 + i*260));
+    setTimeout(()=>{ isl.outText.style.opacity = 1; }, 300 + archTexts.length*260 + 200);
+  }
+  let islRan = false;
+  const islObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting && !islRan){ islRan = true; runISLFlow(); } });
+  }, {threshold:0.4});
+  islObserver.observe(document.getElementById('islBox'));
+
+  /* ============ CONTACT CONVERGENCE ============ */
+  const contactSvg = document.getElementById('contactSvg');
+  function buildContact(){
+    contactSvg.innerHTML = "";
+    const out = {x:700, y:130};
+    const sources = [
+      {label:"AI", x:80, y:40},
+      {label:"ML", x:80, y:90},
+      {label:"CODE", x:80, y:130},
+      {label:"SYSTEMS", x:80, y:170},
+      {label:"PROJECTS", x:80, y:220},
+    ];
+    sources.forEach(s=>{
+      const midx = (s.x+out.x)/2;
+      const d = `M ${s.x+70} ${s.y} C ${midx} ${s.y}, ${midx} ${out.y}, ${out.x} ${out.y}`;
+      const p = el('path', {d, class:'kg-edge'});
+      contactSvg.appendChild(p);
+      const t = el('text', {x:s.x, y:s.y+4, class:'mono', fill:'var(--muted)', 'font-size':11});
+      t.textContent = s.label;
+      contactSvg.appendChild(t);
+      const c = el('circle', {cx:s.x+70, cy:s.y, r:3, fill:'var(--inactive)'});
+      contactSvg.appendChild(c);
+      if(!reduced){
+        setTimeout(()=>{ p.style.transition='stroke .4s ease'; p.style.stroke='var(--accent2)'; }, 200+Math.random()*600);
+      } else { p.style.stroke='var(--accent2)'; }
+    });
+    const outC = el('circle', {cx:out.x, cy:out.y, r:7, fill:'var(--surface)', stroke:'var(--border)', 'stroke-width':1.5});
+    contactSvg.appendChild(outC);
+    const outT = el('text', {x:out.x+16, y:out.y+4, class:'mono', fill:'var(--output)', 'font-size':12});
+    outT.textContent = "LET'S CONNECT";
+    contactSvg.appendChild(outT);
+    setTimeout(()=>{ outC.style.transition='stroke .5s ease'; outC.setAttribute('stroke','var(--output)'); }, reduced?0:900);
+  }
+  let contactBuilt = false;
+  const contactObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting && !contactBuilt){ contactBuilt = true; buildContact(); } });
+  }, {threshold:0.3});
+  contactObserver.observe(document.getElementById('contact'));
+
+})();
+</script>
+</body>
+</html>
