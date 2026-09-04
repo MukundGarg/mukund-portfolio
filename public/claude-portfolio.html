@@ -161,9 +161,76 @@
   .project {
     display: grid; grid-template-columns: 1fr 1fr; gap: 64px; margin-bottom: 120px;
     align-items: center;
+    position: relative;
+    --pointer-x: 50%; --pointer-y: 50%; --pointer-angle: 0deg; --edge-proximity: 0; --glow-opacity: 0;
   }
-  .project:nth-child(even) { direction: rtl; }
-  .project:nth-child(even) > * { direction: ltr; }
+  .project-stage {
+    min-height: 88vh;
+    position: relative;
+  }
+  .project-stage .project {
+    position: sticky;
+    top: 88px;
+    min-height: min(620px, calc(100vh - 128px));
+    margin-bottom: 0;
+    padding: 38px;
+    background: rgba(16, 16, 22, 0.96);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    z-index: 1;
+    filter: brightness(calc(1 - var(--stack-progress, 0) * .08));
+  }
+  .project-stage:nth-child(even) .project { direction: rtl; }
+  .project-stage:nth-child(even) .project > * { direction: ltr; }
+  .project-stage .project::before,
+  .project-stage .project::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    pointer-events: none;
+    opacity: var(--glow-opacity);
+    transition: opacity 240ms ease;
+  }
+  .project-stage .project::before {
+    padding: 1px;
+    background: conic-gradient(from var(--pointer-angle), transparent 0deg, rgba(165,139,232,.82) 18deg, rgba(111,227,215,.5) 34deg, transparent 56deg, transparent 360deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+  .project-stage .project::after {
+    inset: 1px;
+    background: radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(165,139,232,.12), transparent 24%);
+    opacity: calc(var(--glow-opacity) * .55);
+  }
+  .project-stage:last-child .project::before {
+    background: conic-gradient(from var(--pointer-angle), transparent 0deg, rgba(165,139,232,.68) 18deg, rgba(255,128,107,.38) 34deg, transparent 56deg, transparent 360deg);
+  }
+  .project-info, .project .proj-info, .project .diagram { position: relative; z-index: 1; }
+  .project-visual {
+    transform: perspective(1050px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) scale(var(--tilt-scale, 1));
+    transform-style: preserve-3d;
+    transition: transform 180ms ease-out;
+    will-change: transform;
+  }
+  .project-visual::after {
+    content: attr(data-visual-label);
+    position: absolute;
+    left: var(--tooltip-x, 50%);
+    top: var(--tooltip-y, 50%);
+    padding: 5px 8px;
+    color: var(--text-secondary);
+    background: rgba(6, 6, 8, .92);
+    border: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(10px, 10px);
+    transition: opacity 160ms ease;
+    white-space: nowrap;
+  }
+  .project-visual:hover::after { opacity: .9; }
   
   .proj-meta { margin-bottom: 16px; }
   .proj-title { font-size: 28px; margin-bottom: 12px; }
@@ -194,6 +261,31 @@
     overflow: hidden;
   }
 
+  .tech-ticker {
+    position: relative;
+    overflow: hidden;
+    margin: 20px 0 100px;
+    padding: 16px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
+  }
+  .tech-ticker-track {
+    display: flex;
+    width: max-content;
+    animation: ticker-run 34s linear infinite;
+  }
+  .tech-ticker:hover .tech-ticker-track { animation-play-state: paused; }
+  .tech-ticker-list { display: flex; align-items: center; gap: 24px; padding-right: 24px; }
+  .tech-ticker-item {
+    display: inline-flex; align-items: center; gap: 10px;
+    color: var(--text-secondary); font-family: var(--font-mono); font-size: 11px;
+    white-space: nowrap;
+  }
+  .tech-ticker-item::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: var(--data); opacity: .65; }
+  @keyframes ticker-run { to { transform: translate3d(-50%, 0, 0); } }
+
   /* --- Experience & Education --- */
   .timeline { max-width: 800px; border-left: 1px solid var(--border); padding-left: 32px; margin-left: 16px; }
   .timeline-item { position: relative; margin-bottom: 48px; }
@@ -221,7 +313,9 @@
   /* --- Responsive --- */
   @media (max-width: 900px) {
     .profile-grid, .project { grid-template-columns: 1fr; gap: 40px; }
-    .project:nth-child(even) { direction: ltr; }
+    .project-stage { min-height: auto; }
+    .project-stage .project { position: relative; top: auto; min-height: 0; padding: 24px; margin-bottom: 48px; }
+    .project-stage:nth-child(even) .project { direction: ltr; }
     .hero h1 { font-size: 64px; }
     .nav { padding: 16px 20px; }
     .nav-links { gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
@@ -231,6 +325,11 @@
 
   @media (prefers-reduced-motion: reduce) {
     * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+  @media (pointer: coarse), (prefers-reduced-motion: reduce) {
+    .project-visual { transform: none !important; transition: none; will-change: auto; }
+    .project-visual::after { display: none; }
+    .tech-ticker-track { animation: none; transform: none; }
   }
 </style>
 </head>
@@ -280,7 +379,19 @@
       <h2>Selected Systems</h2>
     </div>
 
+    <div class="tech-ticker" aria-label="Technologies used across Mukund's projects">
+      <div class="tech-ticker-track">
+        <div class="tech-ticker-list">
+          <span class="tech-ticker-item">Python</span><span class="tech-ticker-item">FastAPI</span><span class="tech-ticker-item">OpenCV</span><span class="tech-ticker-item">PyTorch</span><span class="tech-ticker-item">NLP</span><span class="tech-ticker-item">Transformers</span><span class="tech-ticker-item">React</span><span class="tech-ticker-item">Next.js</span><span class="tech-ticker-item">TypeScript</span><span class="tech-ticker-item">REST APIs</span><span class="tech-ticker-item">Google APIs</span><span class="tech-ticker-item">Gemini</span><span class="tech-ticker-item">Groq</span>
+        </div>
+        <div class="tech-ticker-list" aria-hidden="true">
+          <span class="tech-ticker-item">Python</span><span class="tech-ticker-item">FastAPI</span><span class="tech-ticker-item">OpenCV</span><span class="tech-ticker-item">PyTorch</span><span class="tech-ticker-item">NLP</span><span class="tech-ticker-item">Transformers</span><span class="tech-ticker-item">React</span><span class="tech-ticker-item">Next.js</span><span class="tech-ticker-item">TypeScript</span><span class="tech-ticker-item">REST APIs</span><span class="tech-ticker-item">Google APIs</span><span class="tech-ticker-item">Gemini</span><span class="tech-ticker-item">Groq</span>
+        </div>
+      </div>
+    </div>
+
     <!-- MailPilot -->
+    <div class="project-stage">
     <div class="project">
       <div class="proj-info">
         <div class="proj-meta mono" style="color: var(--neural);">WORKFLOW AUTOMATION</div>
@@ -298,12 +409,14 @@
         </div>
         <a href="https://github.com/MukundGarg/Mail_meteor_clone" class="btn">View on GitHub</a>
       </div>
-      <div class="diagram" id="diag-mailpilot">
+      <div class="diagram project-visual" id="diag-mailpilot" data-visual-label="reply → stop follow-ups">
         <svg width="100%" height="100%"></svg>
       </div>
     </div>
+    </div>
 
     <!-- StockSense -->
+    <div class="project-stage">
     <div class="project">
       <div class="proj-info">
         <div class="proj-meta mono" style="color: var(--data);">DOCUMENTS + COMPUTER VISION</div>
@@ -317,12 +430,14 @@
         </ul>
         <a href="https://ai-stock-analysis-orpin.vercel.app/" class="btn">Live Demo</a>
       </div>
-      <div class="diagram" id="diag-stocksense">
+      <div class="diagram project-visual" id="diag-stocksense" data-visual-label="chart → pattern → signal">
         <svg width="100%" height="100%"></svg>
       </div>
     </div>
+    </div>
 
     <!-- ISL -->
+    <div class="project-stage">
     <div class="project">
       <div class="proj-info">
         <div class="proj-meta mono" style="color: var(--output);">ON-DEVICE COMPUTER VISION</div>
@@ -336,9 +451,10 @@
         </ul>
         <a href="https://github.com/MukundGarg/ISL-Sign-Language-Translator" class="btn">View on GitHub</a>
       </div>
-      <div class="diagram" id="diag-isl">
+      <div class="diagram project-visual" id="diag-isl" data-visual-label="gesture → text">
         <svg width="100%" height="100%"></svg>
       </div>
+    </div>
     </div>
   </section>
 
@@ -839,6 +955,90 @@
       }
     }
     buildProjectDiagrams();
+
+    // Project interactions stay local to project surfaces and never touch the hero ANN.
+    (function() {
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+      const projects = Array.from(document.querySelectorAll('.project-stage'));
+      const visuals = Array.from(document.querySelectorAll('.project-visual'));
+
+      if (!coarsePointer && !reduceMotion) {
+        projects.forEach((stage) => {
+          const card = stage.querySelector('.project');
+          if (!card) return;
+          const updateEdge = (event) => {
+            const rect = card.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const edgeDistance = Math.min(x, rect.width - x, y, rect.height - y);
+            const proximity = Math.max(0, Math.min(1, 1 - edgeDistance / 90));
+            const angle = Math.atan2(y - rect.height / 2, x - rect.width / 2) * 180 / Math.PI + 90;
+            card.style.setProperty('--pointer-x', `${(x / rect.width) * 100}%`);
+            card.style.setProperty('--pointer-y', `${(y / rect.height) * 100}%`);
+            card.style.setProperty('--pointer-angle', `${angle}deg`);
+            card.style.setProperty('--edge-proximity', proximity.toFixed(3));
+            card.style.setProperty('--glow-opacity', (proximity * .72).toFixed(3));
+          };
+          card.addEventListener('pointerenter', updateEdge);
+          card.addEventListener('pointermove', updateEdge);
+          card.addEventListener('pointerleave', () => {
+            card.style.setProperty('--glow-opacity', '0');
+            card.style.setProperty('--edge-proximity', '0');
+          });
+        });
+
+        visuals.forEach((visual) => {
+          const target = { x: 0, y: 0, scale: 1 };
+          const current = { x: 0, y: 0, scale: 1 };
+          let frame = 0;
+          const animate = () => {
+            current.x += (target.x - current.x) * .16;
+            current.y += (target.y - current.y) * .16;
+            current.scale += (target.scale - current.scale) * .16;
+            visual.style.setProperty('--tilt-x', `${current.x.toFixed(2)}deg`);
+            visual.style.setProperty('--tilt-y', `${current.y.toFixed(2)}deg`);
+            visual.style.setProperty('--tilt-scale', current.scale.toFixed(4));
+            if (Math.abs(target.x - current.x) > .01 || Math.abs(target.y - current.y) > .01 || Math.abs(target.scale - current.scale) > .001) {
+              frame = requestAnimationFrame(animate);
+            } else {
+              frame = 0;
+            }
+          };
+          visual.addEventListener('pointermove', (event) => {
+            const rect = visual.getBoundingClientRect();
+            const x = (event.clientX - rect.left) / rect.width;
+            const y = (event.clientY - rect.top) / rect.height;
+            target.x = (0.5 - y) * 8;
+            target.y = (x - 0.5) * 8;
+            target.scale = 1.018;
+            visual.style.setProperty('--tooltip-x', `${x * 100}%`);
+            visual.style.setProperty('--tooltip-y', `${y * 100}%`);
+            if (!frame) frame = requestAnimationFrame(animate);
+          });
+          visual.addEventListener('pointerleave', () => {
+            target.x = 0; target.y = 0; target.scale = 1;
+            if (!frame) frame = requestAnimationFrame(animate);
+          });
+        });
+      }
+
+      let scrollFrame = 0;
+      const syncStack = () => {
+        scrollFrame = 0;
+        const stickyTop = 88;
+        projects.forEach((stage) => {
+          const card = stage.querySelector('.project');
+          if (!card) return;
+          const progress = Math.max(0, Math.min(1, (stickyTop - stage.getBoundingClientRect().top) / Math.max(1, window.innerHeight * .72)));
+          card.style.setProperty('--stack-progress', reduceMotion ? '0' : progress.toFixed(3));
+        });
+      };
+      window.addEventListener('scroll', () => {
+        if (!scrollFrame) scrollFrame = requestAnimationFrame(syncStack);
+      }, { passive: true });
+      syncStack();
+    })();
 
     // The Next shell owns the dock; this bridge keeps section navigation inside the portfolio document.
     window.addEventListener('message', (event) => {
