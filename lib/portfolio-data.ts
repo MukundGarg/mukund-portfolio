@@ -5,6 +5,14 @@ export const socials = {
   resume: "/Mukund_Garg_Resume.pdf",
 };
 
+export const nav = [
+  { id: "profile", href: "#profile", label: "Profile", n: "01" },
+  { id: "systems", href: "#systems", label: "Systems", n: "02" },
+  { id: "experience", href: "#experience", label: "Experience", n: "03" },
+  { id: "education", href: "#education", label: "Education", n: "04" },
+  { id: "contact", href: "#contact", label: "Contact", n: "05" },
+] as const;
+
 export const projects = [
   {
     title: "MailPilot",

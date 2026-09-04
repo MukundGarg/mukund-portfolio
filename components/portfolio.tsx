@@ -1,18 +1,20 @@
 "use client";
 
+import { useRef } from "react";
+import { PortfolioDock } from "./navigation/PortfolioDock";
+
 export function Portfolio() {
+  const frameRef = useRef<HTMLIFrameElement>(null);
+
   return (
-    <iframe
-      src="/claude-portfolio.html"
-      title="Mukund Garg Portfolio"
-      style={{
-        position: "fixed",
-        inset: 0,
-        width: "100%",
-        height: "100dvh",
-        border: 0,
-        display: "block",
-      }}
-    />
+    <main className="portfolio-shell">
+      <iframe
+        ref={frameRef}
+        src="/claude-portfolio.html"
+        title="Mukund Garg Portfolio"
+        className="portfolio-frame"
+      />
+      <PortfolioDock frameRef={frameRef} />
+    </main>
   );
 }
