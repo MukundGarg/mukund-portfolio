@@ -6,24 +6,26 @@ const display = Syne({
   subsets: ["latin"],
   variable: "--font-display",
   weight: ["500", "600", "700", "800"],
+  preload: false,
 });
 
 const sans = Instrument_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
+  preload: false,
 });
 
 const mono = IBM_Plex_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
   weight: ["400", "500"],
+  preload: false,
 });
 
 export const metadata: Metadata = {
   title: "Mukund Garg — AI / ML · Backend · Computer Vision",
   description:
     "Mukund Garg — Electronics & Communication Engineering student building systems across machine learning, backend, and computer vision.",
-  metadataBase: new URL("https://mukundgarg.dev"),
   openGraph: {
     title: "Mukund Garg — AI / ML · Backend · Computer Vision",
     description: "Building intelligent systems from data, models and code.",

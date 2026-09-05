@@ -6,8 +6,8 @@ export const socials = {
 };
 
 export const nav = [
-  { id: "profile", href: "#profile", label: "Profile", n: "01" },
-  { id: "systems", href: "#systems", label: "Systems", n: "02" },
+  { id: "about", href: "#about", label: "About", n: "01" },
+  { id: "projects", href: "#projects", label: "Work", n: "02" },
   { id: "experience", href: "#experience", label: "Experience", n: "03" },
   { id: "education", href: "#education", label: "Education", n: "04" },
   { id: "contact", href: "#contact", label: "Contact", n: "05" },
@@ -23,6 +23,8 @@ export const projects = [
     stack: ["Python", "FastAPI", "Pydantic", "Gmail API", "Google OAuth", "Google Sheets API"],
     github: "https://github.com/MukundGarg/Mail_meteor_clone",
     live: null,
+    workflow: ["CSV / Sheets / Manual", "Personalization", "Scheduler", "Gmail API", "Follow-up", "Reply Detection", "Stop / Continue", "Status Sync"],
+    code: "if reply_detected:\n    stop_followups()",
     featured: true,
   },
   {
@@ -34,6 +36,8 @@ export const projects = [
     stack: ["Python", "FastAPI", "OpenCV", "Gemini", "Groq", "Vercel"],
     github: "https://github.com/MukundGarg/StockSense-Ai",
     live: "https://ai-stock-analysis-orpin.vercel.app/",
+    workflow: ["PDF / 10-K", "LLM analysis", "Summary · risks · outlook", "Chart image", "OpenCV patterns", "Bullish · bearish · neutral"],
+    code: null,
     featured: true,
   },
   {
@@ -45,6 +49,8 @@ export const projects = [
     stack: ["Android", "Computer Vision", "On-device AI", "Camera Inference"],
     github: "https://github.com/MukundGarg/ISL-Sign-Language-Translator",
     live: null,
+    workflow: ["Camera", "Hand landmarks", "Model", "Gesture", "Text"],
+    code: null,
     featured: false,
   },
 ] as const;
