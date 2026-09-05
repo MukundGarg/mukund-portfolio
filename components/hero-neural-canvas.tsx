@@ -2,348 +2,549 @@
 
 import { useEffect, useRef } from "react";
 
-type NodePoint = { x: number; y: number; layer: number; index: number; active: number; route: number; phase: number; color: string };
-type Edge = { from: number; to: number; branch: number; active: number };
-type Pulse = { edge: Edge; progress: number; strength: number; routeIndex: number; inferenceId: number };
-type Launch = { edge: Edge; at: number; strength: number; routeIndex: number; inferenceId: number };
+type Node = {
+  id: number;
+  layer: number;
+  index: number;
+  baseX: number;
+  baseY: number;
+  x: number;
+  y: number;
+  phase: number;
+  active: number;
+};
 
-const COLORS = { data: "#6FE3D7", neural: "#A58BE8", hot: "#C6B0FF", output: "#FF806B" };
-const DESKTOP_LAYERS = [9, 16, 12, 5, 5];
-const MOBILE_LAYERS = [5, 7, 5, 3, 2];
-const INPUTS = ["DATA", "IMAGE", "TEXT", "SIGNAL", "API"];
-const OUTPUTS = ["SYSTEM", "GESTURE", "INSIGHT", "AUTOMATION", "TEXT"];
-const OUTPUT_FOR_INPUT = [0, 1, 2, 3, 4];
+type Edge = {
+  id: number;
+  from: number;
+  to: number;
+  active: number;
+};
 
-function seeded(index: number) {
-  return (Math.sin(index * 91.17 + 12.4) + 1) / 2;
-}
+type Pulse = {
+  step: number;
+  progress: number;
+} | null;
+
+const COLORS = {
+  data: "#6FE3D7",
+  neural: "#A58BE8",
+  output: "#FF806B",
+};
+
+const INPUTS = ["DATA", "IMAGE", "TEXT", "SIGNAL", "API"] as const;
+
+const OUTPUTS = [
+  "SYSTEM",
+  "GESTURE",
+  "INSIGHT",
+  "AUTOMATION",
+  "TEXT",
+] as const;
+
+const DESKTOP = [5, 11, 9, 5, 5] as const;
+const MOBILE = [5, 7, 6, 4, 5] as const;
+
+const seeded = (seed: number) => {
+  const value = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
+  return value - Math.floor(value);
+};
+
+const damp = (
+  value: number,
+  target: number,
+  lambda: number,
+  dt: number,
+) => target + (value - target) * Math.exp(-lambda * dt);
 
 export function HeroNeuralCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const hero = canvas?.parentElement;
-    if (!canvas || !hero) return;
-    const context = canvas.getContext("2d");
-    if (!context) return;
+    const hero = canvas?.closest<HTMLElement>(".native-hero");
+    const ctx = canvas?.getContext("2d");
 
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const mobile = window.innerWidth < 700;
-    const layers = mobile ? MOBILE_LAYERS : DESKTOP_LAYERS;
-    const nodes: NodePoint[] = [];
-    const edges: Edge[] = [];
-    const pulses: Pulse[] = [];
-    const launches: Launch[] = [];
-    const pointer = { x: -1000, y: -1000, active: false };
-    let width = 0;
-    let height = 0;
-    let frame = 0;
+    if (!canvas || !hero || !ctx) return;
+
+    const motionQuery = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    );
+
+    let reducedMotion = motionQuery.matches;
+    let mobile = window.innerWidth < 700;
+    let counts: readonly number[] = mobile ? MOBILE : DESKTOP;
+
+    let width = 1;
+    let height = 1;
+    let raf = 0;
     let lastTime = 0;
     let visible = true;
-    let cycleTime = 5.3;
-    let cycle = 0;
-    let inferenceId = 0;
-    let routeEdges: Edge[] = [];
-    let routeOutput = 0;
-    let interactionCount = 0;
+    let destroyed = false;
 
-    const markInteracted = () => {
-      interactionCount += 1;
-      if (interactionCount === 1) hero.classList.add("hero-network-interacted");
+    let autoElapsed = 0;
+    let autoIndex = 0;
+
+    let activeRoute: number[] = [];
+    let activeOutput = -1;
+    let pulse: Pulse = null;
+    let interacted = false;
+
+    const nodes: Node[] = [];
+    const edges: Edge[] = [];
+    const routes: number[][] = [];
+
+    const pointer = {
+      x: -9999,
+      y: -9999,
+      active: false,
     };
 
-    const buildNetwork = () => {
+    const starts = () => {
+      const result: number[] = [];
+      let total = 0;
+
+      counts.forEach((count) => {
+        result.push(total);
+        total += count;
+      });
+
+      return result;
+    };
+
+    const addEdge = (from: number, to: number) => {
+      const found = edges.find(
+        (edge) => edge.from === from && edge.to === to,
+      );
+
+      if (found) return found.id;
+
+      const edge = {
+        id: edges.length,
+        from,
+        to,
+        active: 0,
+      };
+
+      edges.push(edge);
+
+      return edge.id;
+    };
+
+    const build = () => {
       nodes.length = 0;
       edges.length = 0;
-      let nodeId = 0;
-      layers.forEach((count, layer) => {
+      routes.length = 0;
+
+      activeRoute = [];
+      activeOutput = -1;
+      pulse = null;
+
+      const layerStarts = starts();
+
+      const xs = mobile
+        ? [0.16, 0.36, 0.56, 0.74, 0.9]
+        : [0.52, 0.64, 0.75, 0.84, 0.93];
+
+      counts.forEach((count, layer) => {
         for (let index = 0; index < count; index += 1) {
+          const id = layerStarts[layer] + index;
+
+          const t = count === 1 ? 0.5 : index / (count - 1);
+
+          const nx =
+            xs[layer] +
+            (seeded(id * 19 + 2) - 0.5) *
+              (mobile ? 0.045 : 0.035);
+
+          const ny =
+            0.17 +
+            t * 0.65 +
+            (seeded(id * 29 + 7) - 0.5) * 0.055;
+
           nodes.push({
-            x: 0,
-            y: 0,
+            id,
             layer,
             index,
+            baseX: nx * width,
+            baseY: ny * height,
+            x: nx * width,
+            y: ny * height,
+            phase: seeded(id + 90) * Math.PI * 2,
             active: 0,
-            route: 0,
-            phase: seeded(nodeId) * Math.PI * 2,
-            color: layer === 0 ? COLORS.data : layer === layers.length - 1 ? COLORS.output : layer === layers.length - 2 ? COLORS.hot : COLORS.neural,
           });
-          nodeId += 1;
         }
       });
-      let layerStart = 0;
-      for (let layer = 0; layer < layers.length - 1; layer += 1) {
-        const nextStart = layerStart + layers[layer];
-        for (let index = 0; index < layers[layer]; index += 1) {
-          const from = layerStart + index;
-          const targets = [index % layers[layer + 1], (index * 2 + layer + 1) % layers[layer + 1], (index + 3) % layers[layer + 1]];
-          targets.forEach((target, branch) => {
-            const to = nextStart + target;
-            if (!edges.some((edge) => edge.from === from && edge.to === to)) edges.push({ from, to, branch, active: 0 });
-          });
+
+      for (let layer = 0; layer < counts.length - 1; layer += 1) {
+        const fromStart = layerStarts[layer];
+        const toStart = layerStarts[layer + 1];
+
+        for (let index = 0; index < counts[layer]; index += 1) {
+          const fromId = fromStart + index;
+
+          const nextIds = Array.from(
+            { length: counts[layer + 1] },
+            (_, nextIndex) => toStart + nextIndex,
+          ).sort(
+            (a, b) =>
+              Math.abs(nodes[a].baseY - nodes[fromId].baseY) -
+              Math.abs(nodes[b].baseY - nodes[fromId].baseY),
+          );
+
+          const fanOut = mobile ? 2 : 3;
+
+          for (let branch = 0; branch < fanOut; branch += 1) {
+            const offset = Math.floor(
+              seeded(fromId * 31 + branch * 11) *
+                Math.min(4, nextIds.length),
+            );
+
+            addEdge(
+              fromId,
+              nextIds[(branch + offset) % nextIds.length],
+            );
+          }
         }
-        layerStart = nextStart;
+      }
+
+      for (let input = 0; input < INPUTS.length; input += 1) {
+        const route: number[] = [];
+        let current = layerStarts[0] + input;
+        const output = layerStarts[counts.length - 1] + input;
+        const outputY = nodes[output].baseY;
+
+        for (let layer = 0; layer < counts.length - 1; layer += 1) {
+          const nextStart = layerStarts[layer + 1];
+          const nextCount = counts[layer + 1];
+          let target = output;
+
+          if (layer < counts.length - 2) {
+            target = Array.from(
+              { length: nextCount },
+              (_, index) => nextStart + index,
+            ).sort(
+              (a, b) =>
+                Math.abs(nodes[a].baseY - outputY) -
+                Math.abs(nodes[b].baseY - outputY),
+            )[0];
+          }
+
+          route.push(addEdge(current, target));
+          current = target;
+        }
+
+        routes.push(route);
       }
     };
 
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      width = canvas.clientWidth;
-      height = canvas.clientHeight;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      context.setTransform(dpr, 0, 0, dpr, 0, 0);
-      buildNetwork();
+    const clearRoute = () => {
+      activeRoute.forEach((id) => {
+        if (edges[id]) edges[id].active = 0;
+      });
+
+      nodes.forEach((node) => { node.active = 0; });
+      activeRoute = [];
+      activeOutput = -1;
+      pulse = null;
     };
 
-    const positionFor = (node: NodePoint, time: number) => {
-      const span = Math.min(width * 0.74, 960);
-      const x = width * 0.5 - span / 2 + (span * node.layer) / (layers.length - 1);
-      const stage = node.layer === 0 ? 0.17 : node.layer === 1 ? 0.34 : node.layer === 2 ? 0.51 : node.layer === 3 ? 0.57 : 0.73;
-      const spread = node.layer === layers.length - 2 ? 0.34 : node.layer === layers.length - 1 ? 0.58 : 1;
-      const count = layers[node.layer];
-      const y = height * stage + (count > 1 ? (node.index / (count - 1) - 0.5) * height * 0.48 * spread : 0);
-      return { x, y: y + (reducedMotion ? 0 : Math.sin(time * 0.0007 + node.phase) * 5) };
-    };
+    const startInference = (input: number, userInitiated: boolean) => {
+      const index = ((input % INPUTS.length) + INPUTS.length) % INPUTS.length;
+      clearRoute();
+      activeRoute = routes[index] ?? [];
+      activeOutput = index;
+      autoElapsed = 0;
+      const inputNode = nodes[index];
+      if (!inputNode) return;
 
-    const curvePoint = (from: NodePoint, to: NodePoint, progress: number) => {
-      const deltaX = to.x - from.x;
-      const controlOne = { x: from.x + deltaX * 0.42, y: from.y };
-      const controlTwo = { x: to.x - deltaX * 0.42, y: to.y };
-      const inverse = 1 - progress;
-      return {
-        x: inverse ** 3 * from.x + 3 * inverse ** 2 * progress * controlOne.x + 3 * inverse * progress ** 2 * controlTwo.x + progress ** 3 * to.x,
-        y: inverse ** 3 * from.y + 3 * inverse ** 2 * progress * controlOne.y + 3 * inverse * progress ** 2 * controlTwo.y + progress ** 3 * to.y,
-      };
-    };
+      inputNode.active = 1;
 
-    const edgeFor = (from: number, layer: number, desiredIndex: number) => {
-      const candidates = edges.filter((edge) => edge.from === from && nodes[edge.to].layer === layer + 1);
-      return candidates.sort((first, second) => Math.abs(nodes[first.to].index - desiredIndex) - Math.abs(nodes[second.to].index - desiredIndex))[0];
-    };
-
-    const buildRoute = (inputIndex: number) => {
-      const desiredOutput = OUTPUT_FOR_INPUT[inputIndex % OUTPUT_FOR_INPUT.length];
-      const route: Edge[] = [];
-      let current = inputIndex;
-      for (let layer = 0; layer < layers.length - 1; layer += 1) {
-        const desiredIndex = layer === layers.length - 2 ? desiredOutput % layers[layer + 1] : (desiredOutput + inputIndex + layer) % layers[layer + 1];
-        const edge = edgeFor(current, layer, desiredIndex);
-        if (!edge) break;
-        route.push(edge);
-        current = edge.to;
+      if (userInitiated && !interacted) {
+        interacted = true;
+        hero.classList.add("hero-network-interacted");
       }
-      return { route, desiredOutput };
-    };
 
-    const resetInference = () => {
-      inferenceId += 1;
-      pulses.length = 0;
-      launches.length = 0;
-      routeEdges.forEach((edge) => { edge.active = 0; });
-      nodes.forEach((node) => { node.route = 0; });
-      return inferenceId;
-    };
-
-    const startInference = (inputIndex: number, immediate = false) => {
-      const currentInference = resetInference();
-      const route = buildRoute(inputIndex);
-      routeEdges = route.route;
-      routeOutput = route.desiredOutput;
-      markInteracted();
-      const input = nodes[inputIndex];
-      if (!input || routeEdges.length === 0) return;
-      input.route = 1;
-      if (reducedMotion || immediate) {
-        routeEdges.forEach((edge) => { edge.active = 1; nodes[edge.to].route = 1; });
-        draw(performance.now(), 0);
+      if (reducedMotion) {
+        activeRoute.forEach((edgeId) => {
+          const edge = edges[edgeId];
+          if (!edge) return;
+          edge.active = 1;
+          nodes[edge.to].active = 1;
+        });
+        draw(performance.now(), 0, true);
         return;
       }
-      pulses.push({ edge: routeEdges[0], progress: 0, strength: 1, routeIndex: 0, inferenceId: currentInference });
+
+      pulse = { step: 0, progress: 0 };
       ensureFrame();
     };
 
-    const scheduleNext = (routeIndex: number, now: number, currentInference: number) => {
-      const next = routeEdges[routeIndex + 1];
-      if (next) launches.push({ edge: next, at: now + 80, strength: 1, routeIndex: routeIndex + 1, inferenceId: currentInference });
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect();
+      width = Math.max(1, rect.width);
+      height = Math.max(1, rect.height);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const nextMobile = window.innerWidth < 700;
+      if (nextMobile !== mobile) {
+        mobile = nextMobile;
+        counts = mobile ? MOBILE : DESKTOP;
+      }
+
+      build();
+      draw(performance.now(), 0, true);
     };
 
-    const draw = (time: number, delta: number) => {
-      context.clearRect(0, 0, width, height);
-      cycleTime += delta;
-      if (!reducedMotion && cycleTime > 7) {
-        cycleTime = 0;
-        startInference(cycle % INPUTS.length);
-        cycle += 1;
+    const edgePoint = (edge: Edge, t: number) => {
+      const from = nodes[edge.from];
+      const to = nodes[edge.to];
+      const dx = to.x - from.x;
+      const c1x = from.x + dx * 0.42;
+      const c2x = to.x - dx * 0.42;
+      const bend = (seeded(edge.id + 55) - 0.5) * 34;
+      const inverse = 1 - t;
+
+      return {
+        x: inverse ** 3 * from.x + 3 * inverse ** 2 * t * c1x + 3 * inverse * t ** 2 * c2x + t ** 3 * to.x,
+        y: inverse ** 3 * from.y + 3 * inverse ** 2 * t * (from.y + bend) + 3 * inverse * t ** 2 * (to.y - bend) + t ** 3 * to.y,
+      };
+    };
+
+    const draw = (time: number, dt: number, snap = false) => {
+      ctx.clearRect(0, 0, width, height);
+
+      if (!reducedMotion && !snap) {
+        autoElapsed += dt;
+        if (autoElapsed >= 8 && pulse === null) {
+          startInference(autoIndex % INPUTS.length, false);
+          autoIndex += 1;
+        }
       }
+
       nodes.forEach((node) => {
-        const position = positionFor(node, time);
-        let targetX = position.x;
-        let targetY = position.y;
-        if (!reducedMotion && pointer.active && node.layer < layers.length - 1) {
-          const distanceX = node.x - pointer.x;
-          const distanceY = node.y - pointer.y;
-          const distance = Math.hypot(distanceX, distanceY) || 1;
-          if (distance < 155) {
-            const force = (1 - distance / 155) * 10;
-            targetX += (distanceX / distance) * force;
-            targetY += (distanceY / distance) * force;
+        let targetX = node.baseX;
+        let targetY = node.baseY;
+
+        if (!reducedMotion && !snap) {
+          targetX += Math.sin(time * 0.00045 + node.phase) * 3.5;
+          targetY += Math.cos(time * 0.0005 + node.phase * 1.2) * 4.5;
+
+          if (pointer.active) {
+            const dx = targetX - pointer.x;
+            const dy = targetY - pointer.y;
+            const distance = Math.hypot(dx, dy) || 1;
+            if (distance < 150) {
+              const force = (1 - distance / 150) * 12;
+              targetX += (dx / distance) * force;
+              targetY += (dy / distance) * force;
+            }
           }
         }
-        node.x += (targetX - node.x) * Math.min(1, delta * 6 || 0.08);
-        node.y += (targetY - node.y) * Math.min(1, delta * 6 || 0.08);
-        node.route *= reducedMotion ? 1 : 0.985;
-        node.active *= reducedMotion ? 1 : 0.94;
-      });
 
-      const now = performance.now();
-      for (let index = launches.length - 1; index >= 0; index -= 1) {
-        const launch = launches[index];
-        if (launch.inferenceId !== inferenceId) { launches.splice(index, 1); continue; }
-        if (launch.at <= now) {
-          pulses.push({ edge: launch.edge, progress: 0, strength: launch.strength, routeIndex: launch.routeIndex, inferenceId: launch.inferenceId });
-          launch.edge.active = 1;
-          launches.splice(index, 1);
+        if (snap || reducedMotion || dt === 0) {
+          node.x = targetX;
+          node.y = targetY;
+        } else {
+          node.x = damp(node.x, targetX, 10, dt);
+          node.y = damp(node.y, targetY, 10, dt);
+          node.active *= Math.exp(-0.6 * dt);
         }
-      }
+      });
 
       edges.forEach((edge) => {
-        edge.active *= reducedMotion ? 1 : 0.94;
+        if (!reducedMotion && !snap) edge.active *= Math.exp(-2.4 * dt);
         const from = nodes[edge.from];
         const to = nodes[edge.to];
-        const pointerDistance = pointer.active ? Math.min(Math.hypot((from.x + to.x) / 2 - pointer.x, (from.y + to.y) / 2 - pointer.y), 220) : 220;
-        const localBoost = pointer.active ? (1 - pointerDistance / 220) * 0.035 : 0;
-        const activity = Math.max(from.route, to.route, edge.active);
-        const controlOneX = from.x + (to.x - from.x) * 0.42;
-        const controlTwoX = to.x - (to.x - from.x) * 0.42;
-        context.beginPath();
-        context.moveTo(from.x, from.y);
-        context.bezierCurveTo(controlOneX, from.y, controlTwoX, to.y, to.x, to.y);
-        context.strokeStyle = `rgba(165,139,232,${0.025 + localBoost + activity * 0.34})`;
-        context.lineWidth = 0.65 + activity * 0.75;
-        context.stroke();
+        const midpointX = (from.x + to.x) / 2;
+        const midpointY = (from.y + to.y) / 2;
+        const pointerDistance = pointer.active ? Math.hypot(midpointX - pointer.x, midpointY - pointer.y) : 9999;
+        const pointerBoost = pointerDistance < 190 ? (1 - pointerDistance / 190) * 0.04 : 0;
+        const activity = Math.max(edge.active, from.active, to.active);
+        const dx = to.x - from.x;
+        const bend = (seeded(edge.id + 55) - 0.5) * 34;
+
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.bezierCurveTo(from.x + dx * 0.42, from.y + bend, to.x - dx * 0.42, to.y - bend, to.x, to.y);
+        ctx.strokeStyle = `rgba(165,139,232,${0.035 + pointerBoost + activity * 0.27})`;
+        ctx.lineWidth = 0.65 + activity * 0.75;
+        ctx.stroke();
       });
 
-      for (let index = pulses.length - 1; index >= 0; index -= 1) {
-        const pulse = pulses[index];
-        if (pulse.inferenceId !== inferenceId) { pulses.splice(index, 1); continue; }
-        pulse.progress += delta * 0.62;
-        if (pulse.progress >= 1) {
-          nodes[pulse.edge.to].route = 1;
-          nodes[pulse.edge.to].active = 1;
-          pulse.edge.active = 1;
-          scheduleNext(pulse.routeIndex, now, pulse.inferenceId);
-          pulses.splice(index, 1);
-          continue;
+      if (pulse && activeRoute.length) {
+        const edge = edges[activeRoute[pulse.step]];
+        if (edge) {
+          edge.active = 1;
+          pulse.progress += dt * 1.6;
+
+          if (pulse.progress >= 1) {
+            nodes[edge.to].active = 1;
+            if (pulse.step < activeRoute.length - 1) pulse = { step: pulse.step + 1, progress: 0 };
+            else pulse = null;
+          } else {
+            const head = edgePoint(edge, pulse.progress);
+            const tail = edgePoint(edge, Math.max(0, pulse.progress - 0.09));
+            const gradient = ctx.createLinearGradient(tail.x, tail.y, head.x, head.y);
+            gradient.addColorStop(0, "rgba(111,227,215,0)");
+            gradient.addColorStop(0.55, "rgba(165,139,232,.74)");
+            gradient.addColorStop(1, "rgba(241,239,244,.96)");
+            ctx.beginPath();
+            ctx.moveTo(tail.x, tail.y);
+            ctx.lineTo(head.x, head.y);
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          }
         }
-        const from = nodes[pulse.edge.from];
-        const to = nodes[pulse.edge.to];
-        const point = curvePoint(from, to, pulse.progress);
-        const tail = curvePoint(from, to, Math.max(0, pulse.progress - 0.08));
-        context.beginPath();
-        context.moveTo(tail.x, tail.y);
-        context.lineTo(point.x, point.y);
-        context.strokeStyle = `rgba(241,239,244,${pulse.strength * 0.84})`;
-        context.lineWidth = 1.7;
-        context.stroke();
       }
 
       nodes.forEach((node) => {
         const isInput = node.layer === 0;
-        const radius = 1.8 + node.route * 1.7 + node.active * 1.2;
-        context.beginPath();
-        context.arc(node.x, node.y, radius, 0, Math.PI * 2);
-        context.fillStyle = node.route > 0.1 || node.active > 0.2 ? node.color : isInput ? COLORS.data : "rgba(241,239,244,0.16)";
-        context.fill();
-        if (node.route > 0.5 || node.active > 0.5) {
-          context.beginPath();
-          context.arc(node.x, node.y, 7 + node.route * 4, 0, Math.PI * 2);
-          context.strokeStyle = `rgba(165,139,232,${Math.min(.45, node.route * .35 + node.active * .2)})`;
-          context.stroke();
+        const isOutput = node.layer === counts.length - 1;
+        const radius = (isInput || isOutput ? 2.6 : 1.8) + node.active * 1.6;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = isInput ? COLORS.data : isOutput ? node.active > 0.2 ? COLORS.output : "rgba(255,128,107,.45)" : node.active > 0.2 ? COLORS.neural : "rgba(241,239,244,.2)";
+        ctx.fill();
+
+        if (node.active > 0.45) {
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, 7 + node.active * 4, 0, Math.PI * 2);
+          ctx.strokeStyle = isOutput ? `rgba(255,128,107,${0.12 + node.active * 0.2})` : `rgba(165,139,232,${0.1 + node.active * 0.2})`;
+          ctx.stroke();
         }
       });
-      if (routeOutput >= 0 && routeEdges.length && nodes[routeEdges[routeEdges.length - 1].to].route > 0.8) {
-        const output = nodes[routeEdges[routeEdges.length - 1].to];
-        context.font = "10px var(--font-mono), monospace";
-        context.fillStyle = COLORS.output;
-        context.fillText(OUTPUTS[routeOutput], output.x + 14, output.y + 3);
+
+      ctx.font = "500 9px monospace";
+      ctx.textBaseline = "middle";
+      INPUTS.forEach((label, index) => {
+        const node = nodes[index];
+        if (!node) return;
+        ctx.fillStyle = "rgba(111,227,215,.72)";
+        ctx.fillText(label, node.x + 11, node.y);
+      });
+
+      if (activeOutput >= 0) {
+        const layerStarts = starts();
+        const output = nodes[layerStarts[counts.length - 1] + activeOutput];
+        if (output && output.active > 0.25) {
+          const label = OUTPUTS[activeOutput];
+          ctx.fillStyle = COLORS.output;
+          ctx.fillText(label, output.x - ctx.measureText(label).width - 12, output.y);
+        }
       }
     };
 
-    const ensureFrame = () => {
-      if (!reducedMotion && visible && document.visibilityState === "visible" && !frame) frame = requestAnimationFrame(loop);
+    const loop = (time: number) => {
+      raf = 0;
+      if (destroyed || reducedMotion || !visible || document.visibilityState !== "visible") return;
+      const dt = lastTime ? Math.min(0.05, (time - lastTime) / 1000) : 1 / 60;
+      lastTime = time;
+      draw(time, dt);
+      ensureFrame();
     };
 
-    const loop = (time: number) => {
-      if (!lastTime) lastTime = time;
-      const delta = Math.min(0.05, (time - lastTime) / 1000);
-      lastTime = time;
-      if (visible && document.visibilityState === "visible") draw(time, delta);
-      if (!reducedMotion && visible && document.visibilityState === "visible") frame = requestAnimationFrame(loop);
-      else frame = 0;
+    const ensureFrame = () => {
+      if (!destroyed && !reducedMotion && visible && document.visibilityState === "visible" && raf === 0) raf = requestAnimationFrame(loop);
+    };
+
+    const pointFromEvent = (event: PointerEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      return { x: event.clientX - rect.left, y: event.clientY - rect.top };
     };
 
     const onPointerMove = (event: PointerEvent) => {
-      const rect = hero.getBoundingClientRect();
-      pointer.x = event.clientX - rect.left;
-      pointer.y = event.clientY - rect.top;
-      pointer.active = true;
+      const point = pointFromEvent(event);
+      pointer.x = point.x;
+      pointer.y = point.y;
+      pointer.active = event.pointerType !== "touch";
+    };
+
+    const onPointerLeave = () => { pointer.active = false; };
+
+    const onPointerDown = (event: PointerEvent) => {
+      const point = pointFromEvent(event);
+      let hit = -1;
+      let radius = mobile ? 36 : 28;
+
+      for (let index = 0; index < INPUTS.length; index += 1) {
+        const node = nodes[index];
+        if (!node) continue;
+        const distance = Math.hypot(node.x - point.x, node.y - point.y);
+        if (distance < radius) { radius = distance; hit = index; }
+      }
+
+      if (hit >= 0) startInference(hit, true);
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState !== "visible" && raf) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+        lastTime = 0;
+      } else ensureFrame();
+    };
+
+    const onMotionChange = (event: MediaQueryListEvent) => {
+      reducedMotion = event.matches;
+      if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      lastTime = 0;
+      clearRoute();
+      draw(performance.now(), 0, true);
       ensureFrame();
     };
-    const onPointerLeave = () => { pointer.active = false; };
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "hidden" && frame) { cancelAnimationFrame(frame); frame = 0; }
-      if (document.visibilityState === "visible") ensureFrame();
-    };
-    const onResize = () => { resize(); ensureFrame(); };
-    const onInput = (event: Event) => {
-      const target = event.currentTarget as HTMLButtonElement;
-      startInference(Number(target.dataset.input || 0));
-    };
-    const onCtaEnter = (event: Event) => {
-      const target = event.currentTarget as HTMLAnchorElement;
-      startInference(Number(target.dataset.route || 0));
-    };
-    const onCtaFocus = onCtaEnter;
 
-    const inputButtons = Array.from(hero.querySelectorAll<HTMLButtonElement>("[data-network-input]"));
-    inputButtons.forEach((button) => { button.addEventListener("click", onInput); });
+    const onCta = (event: Event) => {
+      const anchor = event.currentTarget as HTMLAnchorElement;
+      startInference(Number(anchor.dataset.networkRoute ?? 0), true);
+    };
+
     const ctas = Array.from(hero.querySelectorAll<HTMLAnchorElement>("[data-network-route]"));
-    ctas.forEach((cta) => { cta.addEventListener("pointerenter", onCtaEnter); cta.addEventListener("focus", onCtaFocus); });
-    hero.addEventListener("pointermove", onPointerMove, { passive: true });
-    hero.addEventListener("pointerleave", onPointerLeave, { passive: true });
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    window.addEventListener("resize", onResize);
-    const observer = new IntersectionObserver(([entry]) => {
+    ctas.forEach((cta) => { cta.addEventListener("pointerenter", onCta); cta.addEventListener("focus", onCta); });
+    canvas.addEventListener("pointermove", onPointerMove, { passive: true });
+    canvas.addEventListener("pointerleave", onPointerLeave, { passive: true });
+    canvas.addEventListener("pointerdown", onPointerDown, { passive: true });
+    document.addEventListener("visibilitychange", onVisibility);
+    motionQuery.addEventListener("change", onMotionChange);
+
+    const resizeObserver = new ResizeObserver(resize);
+    resizeObserver.observe(canvas);
+
+    const intersectionObserver = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting;
-      if (!visible && frame) { cancelAnimationFrame(frame); frame = 0; }
+      if (!visible && raf) { cancelAnimationFrame(raf); raf = 0; lastTime = 0; }
       if (visible) ensureFrame();
-    }, { threshold: 0.01 });
-    observer.observe(hero);
+    }, { threshold: 0.02 });
+    intersectionObserver.observe(hero);
+
     resize();
-    if (reducedMotion) draw(performance.now(), 0);
-    else ensureFrame();
+    ensureFrame();
 
     return () => {
-      if (frame) cancelAnimationFrame(frame);
-      observer.disconnect();
-      hero.removeEventListener("pointermove", onPointerMove);
-      hero.removeEventListener("pointerleave", onPointerLeave);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-      window.removeEventListener("resize", onResize);
-      inputButtons.forEach((button) => { button.removeEventListener("click", onInput); });
-      ctas.forEach((cta) => { cta.removeEventListener("pointerenter", onCtaEnter); cta.removeEventListener("focus", onCtaFocus); });
+      destroyed = true;
+      if (raf) cancelAnimationFrame(raf);
+      resizeObserver.disconnect();
+      intersectionObserver.disconnect();
+      canvas.removeEventListener("pointermove", onPointerMove);
+      canvas.removeEventListener("pointerleave", onPointerLeave);
+      canvas.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("visibilitychange", onVisibility);
+      motionQuery.removeEventListener("change", onMotionChange);
+      ctas.forEach((cta) => { cta.removeEventListener("pointerenter", onCta); cta.removeEventListener("focus", onCta); });
     };
   }, []);
 
   return (
     <>
       <canvas ref={canvasRef} className="hero-neural-canvas" aria-hidden="true" />
-      <div className="network-controls" aria-label="Interactive neural network inputs">
-        {INPUTS.map((input, index) => <button key={input} type="button" data-network-input data-input={index} aria-label={`Activate ${input} route`}>{input}</button>)}
-      </div>
-      <span className="network-hint mono"><span className="network-hint-desktop">INTERACT WITH THE NETWORK</span><span className="network-hint-touch">TAP A NODE</span></span>
+      <span className="network-hint mono" aria-hidden="true">
+        <span className="network-hint-desktop">MOVE · CLICK AN INPUT</span>
+        <span className="network-hint-touch">TAP AN INPUT NODE</span>
+      </span>
     </>
   );
 }

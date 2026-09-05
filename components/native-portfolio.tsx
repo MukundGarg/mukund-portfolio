@@ -1,56 +1,41 @@
 import Link from "next/link";
 import { ArrowUpRight, Github, Linkedin, Mail, Download } from "lucide-react";
+import type { ReactNode } from "react";
 import { HeroNeuralCanvas } from "./hero-neural-canvas";
 import { education, experience, leadership, nav, projects, skillGroups, socials } from "@/lib/portfolio-data";
 
-function SectionLabel({ index, children }: { index: string; children: React.ReactNode }) {
+function SectionLabel({ index, children }: { index: string; children: ReactNode }) {
   return <div className="section-label"><span>{index}</span><span>{children}</span></div>;
 }
 
 function CapabilityMap() {
-  const primary = ["Machine Learning", "Deep Learning", "Computer Vision", "NLP", "Backend"];
-  const secondary = ["Regression", "Random Forest", "XGBoost", "CNN", "OpenCV", "LSTM / GRU", "Transformers", "FastAPI", "Google APIs"];
-  const connections = [[0, 1], [1, 2], [1, 3], [0, 4], [2, 5], [3, 6], [4, 7], [4, 8]];
-  const primaryPositions = [[20, 42], [43, 23], [72, 35], [58, 72], [19, 76]];
-  const secondaryPositions = [[5, 16], [23, 10], [43, 8], [89, 28], [88, 57], [70, 88], [45, 94], [3, 60], [28, 91]];
+  const visibleGroups = skillGroups.filter((group) => group.label !== "Web");
 
   return (
-    <div className="capability-map" aria-label="Capability map connecting machine learning, deep learning, computer vision, NLP, and backend skills">
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-        {connections.map(([from, to]) => <line key={`${from}-${to}`} x1={primaryPositions[from][0]} y1={primaryPositions[from][1]} x2={secondaryPositions[to][0]} y2={secondaryPositions[to][1]} />)}
-        <line x1="20" y1="42" x2="43" y2="23" /><line x1="43" y1="23" x2="72" y2="35" /><line x1="43" y1="23" x2="58" y2="72" /><line x1="20" y1="42" x2="19" y2="76" />
-      </svg>
-      {primary.map((label, index) => <span key={label} className="capability-node primary" style={{ left: `${primaryPositions[index][0]}%`, top: `${primaryPositions[index][1]}%` }}><i />{label}</span>)}
-      {secondary.map((label, index) => <span key={label} className="capability-node secondary" style={{ left: `${secondaryPositions[index][0]}%`, top: `${secondaryPositions[index][1]}%` }}><i />{label}</span>)}
+    <div className="capability-map" role="group" aria-label="Technical capability map">
+      <div className="capability-spine" aria-hidden="true" />
+      {visibleGroups.map((group, index) => (
+        <article className="capability-group" key={group.label}>
+          <span className="capability-index mono">0{index + 1}</span>
+          <h3>{group.label}</h3>
+          <p>{group.items.join(" · ")}</p>
+        </article>
+      ))}
     </div>
   );
 }
 
+function FlowSequence({ items }: { items: readonly string[] }) {
+  return <div className="flow-sequence">{items.map((item, index) => <div className="flow-step" key={item}><span className="flow-number mono">{String(index + 1).padStart(2, "0")}</span><span>{item}</span></div>)}</div>;
+}
+
 function ProjectDiagram({ title, workflow }: { title: string; workflow: readonly string[] }) {
-  const isMail = title === "MailPilot";
-  const isStock = title === "StockSense AI";
+  if (title === "StockSense AI") {
+    return <div className="project-diagram" role="group" aria-label="StockSense AI analysis workflows"><div className="diagram-head"><span>signal paths</span><span>INPUTS → ANALYSIS</span></div><div className="stock-branches"><div className="flow-branch"><span className="branch-label mono">DOCUMENT</span><FlowSequence items={["PDF / 10-K", "LLM analysis", "Summary · risks · outlook"]} /></div><div className="flow-branch"><span className="branch-label mono">CHART</span><FlowSequence items={["Chart image", "OpenCV patterns", "Bullish · bearish · neutral"]} /></div></div></div>;
+  }
+
   return (
-    <div className={`project-diagram diagram-${isMail ? "mail" : isStock ? "stock" : "isl"}`}>
-      <div className="diagram-head"><span>signal path</span><span>{isMail ? "DATA → AUTOMATION" : isStock ? "INPUTS → ANALYSIS" : "CAMERA → TEXT"}</span></div>
-      {isMail && <svg viewBox="0 0 760 160" preserveAspectRatio="xMidYMid meet" aria-label="MailPilot workflow diagram">
-        <path d="M86 80 H168 M250 80 H332 M414 80 H496 M578 80 H660" />
-        {workflow.map((label, index) => <g key={label} transform={`translate(${index * 82}, 0)`}><rect x="4" y="52" width="76" height="56" /><text x="42" y="78" textAnchor="middle">{label.split(" / ")[0]}</text><text x="42" y="94" textAnchor="middle" className="diagram-muted">{label.includes(" / ") ? label.split(" / ")[1] : index === 6 ? "future sends" : ""}</text></g>)}
-      </svg>}
-      {isStock && <svg viewBox="0 0 760 250" preserveAspectRatio="xMidYMid meet" aria-label="StockSense AI two workflow diagram">
-        <path d="M170 60 H286 M474 60 H590 M170 188 H286 M474 188 H590" />
-        <g><rect x="24" y="28" width="146" height="64" /><text x="97" y="56" textAnchor="middle">PDF / 10-K</text><text x="97" y="75" textAnchor="middle" className="diagram-muted">document</text></g>
-        <g><rect x="286" y="28" width="188" height="64" className="violet-box" /><text x="380" y="56" textAnchor="middle">LLM ANALYSIS</text><text x="380" y="75" textAnchor="middle" className="diagram-muted">summary · risks · outlook</text></g>
-        <g><rect x="590" y="28" width="146" height="64" className="coral-box" /><text x="663" y="56" textAnchor="middle">SUMMARY</text><text x="663" y="75" textAnchor="middle" className="diagram-muted">result</text></g>
-        <g><rect x="24" y="156" width="146" height="64" /><text x="97" y="184" textAnchor="middle">CHART IMAGE</text><text x="97" y="203" textAnchor="middle" className="diagram-muted">visual input</text></g>
-        <g><rect x="286" y="156" width="188" height="64" className="teal-box" /><text x="380" y="184" textAnchor="middle">OPENCV PATTERNS</text><text x="380" y="203" textAnchor="middle" className="diagram-muted">nine patterns</text></g>
-        <g><rect x="590" y="156" width="146" height="64" className="coral-box" /><text x="663" y="184" textAnchor="middle">BULL / BEAR / NEUTRAL</text></g>
-      </svg>}
-      {!isMail && !isStock && <svg viewBox="0 0 760 220" preserveAspectRatio="xMidYMid meet" aria-label="ISL Translator workflow diagram">
-        <path d="M128 110 H204 M322 110 H398 M516 110 H592" />
-        {workflow.map((label, index) => <g key={label} transform={`translate(${index * 118}, 0)`}><rect x="12" y="80" width="108" height="60" className={index === 4 ? "coral-box" : index === 1 ? "violet-box" : ""} /><text x="66" y="115" textAnchor="middle">{label}</text></g>)}
-        <g className="landmark-mini"><path d="M80 192 L112 154 L139 176 L126 210 M112 154 L136 150 M139 176 L166 159" /><circle cx="80" cy="192" r="3" /><circle cx="112" cy="154" r="3" /><circle cx="139" cy="176" r="3" /></g>
-      </svg>}
-    </div>
+    <div className="project-diagram" role="group" aria-label={`${title} workflow`}><div className="diagram-head"><span>signal path</span><span>{title === "MailPilot" ? "DATA → AUTOMATION" : "CAMERA → TEXT"}</span></div><FlowSequence items={workflow} />{title === "Offline ISL Translator" && <svg className="landmark-mark" viewBox="0 0 180 100" role="img" aria-label="Abstract hand landmark connection"><path d="M22 78 L55 34 L81 58 L112 25 M55 34 L77 18 M81 58 L126 54 M81 58 L96 88" />{["22,78", "55,34", "81,58", "112,25", "77,18", "126,54", "96,88"].map((point) => { const [cx, cy] = point.split(","); return <circle key={point} cx={cx} cy={cy} r="3" />; })}</svg>}</div>
   );
 }
 
