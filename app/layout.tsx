@@ -23,12 +23,12 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mukund Garg — AI / ML · Backend · Computer Vision",
+  title: "Mukund Garg — Applied AI & Systems Portfolio",
   description:
-    "Mukund Garg — Electronics & Communication Engineering student building systems across machine learning, backend, and computer vision.",
+    "An interactive notebook portfolio by Mukund Garg, showcasing applied AI, backend systems, computer vision, and selected projects.",
   openGraph: {
-    title: "Mukund Garg — AI / ML · Backend · Computer Vision",
-    description: "Building intelligent systems from data, models and code.",
+    title: "Mukund Garg — Applied AI & Systems Portfolio",
+    description: "Building intelligent systems from data, models, and code.",
     type: "website",
   },
 };

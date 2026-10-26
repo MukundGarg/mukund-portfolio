@@ -1,6 +1,6 @@
-# Mukund Garg Portfolio
+# Mukund Garg Notebook Portfolio
 
-A native Next.js portfolio for Mukund Garg's applied AI, backend systems, computer vision, and automation work.
+A notebook-inspired Next.js portfolio for Mukund Garg's applied AI, backend systems, computer vision, and automation work. Projects, skills, experience, and education are presented in a reactive editor layout with a filterable variables inspector.
 
 ## Stack
 
@@ -22,12 +22,11 @@ Open `http://localhost:3000`.
 ## Structure
 
 - `app/page.tsx` — route entry
-- `components/native-portfolio.tsx` — semantic page composition and project diagrams
-- `components/hero-neural-canvas.tsx` — isolated deterministic hero ANN canvas
+- `components/notebook-portfolio.tsx` — notebook interface, interactive cells, chart, and portfolio sections
 - `lib/portfolio-data.ts` — single source of truth for portfolio content and links
-- `app/globals.css` — visual system and responsive layout
+- `app/globals.css` — visual system and responsive notebook layout
 
-The portfolio uses normal document scrolling and does not depend on an iframe or a separate public HTML application.
+The page uses normal document scrolling. Its chart is generated from the portfolio's skill data, and the add-cell control provides a local editable Markdown preview; it does not require a Python server or embed a separate application.
 
 ## Resume
 
